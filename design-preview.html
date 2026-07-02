@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APPNAME — Design Preview</title>
+<style>
+  :root {
+    --void:      #000000;
+    --surface:   #0A0A0A;
+    --matrix:    #00FF41;
+    --white:     #FFFFFF;
+    --text-sec:  #888888;
+    --track:     #222222;
+    --border:    rgba(255,255,255,0.08);
+    --font-mono: 'Share Tech Mono', 'SF Mono', 'Fira Code', monospace;
+    --font-body: 'Rajdhani', 'SF Pro Display', 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin:0; padding:0; -ms-overflow-style:none; scrollbar-width:none; }
+  *::-webkit-scrollbar { display:none; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px;
+    gap: 32px;
+    overflow-x: hidden;
+  }
+
+  .page-title {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 6px;
+    color: var(--matrix);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--text-sec);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* === Showcase Grid === */
+  .showcase {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 40px;
+    width: 100%;
+    max-width: 1600px;
+  }
+  .device-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .device-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-sec);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* === Phone Frame === */
+  .phone {
+    width: 375px;
+    height: 812px;
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    background: var(--void);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 0 4px var(--surface), 0 20px 60px rgba(0,0,0,0.6);
+    flex-shrink: 0;
+  }
+  .scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.25;
+    background: repeating-linear-gradient(to bottom, transparent, transparent 2px, rgba(0,255,65,0.03) 2px, rgba(0,255,65,0.03) 4px);
+  }
+
+  /* === Trip End Content === */
+  .trip-end {
+    padding: 48px 24px 32px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+  }
+
+  /* === Radial Score === */
+  .radial-score {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto 20px;
+  }
+  .radial-score svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+  .ring-track {
+    fill: none;
+    stroke: var(--track);
+    stroke-width: 8;
+    stroke-linecap: round;
+  }
+  .ring-fill {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dasharray 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .score-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .score-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-sec);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .score-number {
+    font-family: var(--font-mono);
+    font-size: 56px;
+    line-height: 1;
+    margin: 4px 0;
+  }
+  .score-sub {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+
+  /* === Status Badge === */
+  .status-badge {
+    font-family: var(--font-mono);
+    border: 1px solid;
+    padding: 5px 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    margin-bottom: 16px;
+  }
+
+  /* === Mini Stats === */
+  .mini-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 12px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.02);
+  }
+  .stat-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-sec);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 20px;
+  }
+  .stat-value span { font-size: 10px; color: var(--text-sec); }
+
+  /* === Category Bars === */
+  .bars { width: 100%; margin-bottom: 12px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+  }
+  .bar-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-sec);
+    letter-spacing: 1px;
+    width: 90px;
+    text-transform: uppercase;
+  }
+  .bar-track {
+    flex: 1;
+    height: 5px;
+    background: var(--track);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 0 8px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .bar-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    width: 28px;
+    text-align: right;
+  }
+
+  /* === XP === */
+  .xp-float {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    color: var(--matrix);
+    margin: 4px 0 16px;
+  }
+
+  /* === Buttons === */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  .btn-share { color: var(--matrix); border-color: var(--matrix); }
+  .btn-hist { color: var(--text-sec); border-color: transparent; }
+
+  /* === Badge Overlay === */
+  .badge-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  .badge-star {
+    font-size: 80px;
+    animation: badgePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    text-shadow: 0 0 30px rgba(0,255,65,0.4);
+  }
+  .badge-name {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    margin-top: 12px;
+    letter-spacing: 2px;
+  }
+  .badge-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 6px;
+  }
+  .badge-cta {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 2px;
+    margin-top: 28px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes badgePop {
+    0% { transform: scale(0); opacity:0; }
+    60% { transform: scale(1.2); opacity:1; }
+    100% { transform: scale(1); opacity:1; }
+  }
+  @keyframes pulse { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
+
+  /* === Rank Up Screen === */
+  .rankup-screen {
+    position: absolute;
+    inset: 0;
+    background: var(--void);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  .rankup-label {
+    font-size: 22px;
+    color: var(--text-sec);
+    letter-spacing: 4px;
+    animation: fadeUp 0.5s both;
+  }
+  .rankup-name {
+    font-family: var(--font-mono);
+    font-size: 44px;
+    margin-top: 14px;
+    letter-spacing: 2px;
+    animation: rankScale 0.6s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .rankup-sub {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    margin-top: 20px;
+    letter-spacing: 2px;
+    animation: fadeUp 0.5s 0.8s both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(10px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  @keyframes rankScale {
+    from { transform: scale(0.3); opacity:0; }
+    to   { transform: scale(1);   opacity:1; }
+  }
+
+  /* === Controls === */
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .controls button {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--white);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .controls button:hover {
+    border-color: var(--matrix);
+    color: var(--matrix);
+  }
+
+  /* Grade colors */
+  .grade-S, .fill-S { color: #00FF41; stroke: #00FF41; }
+  .grade-A, .fill-A { color: #ADFF2F; stroke: #ADFF2F; }
+  .grade-B, .fill-B { color: #FFD60A; stroke: #FFD60A; }
+  .grade-C, .fill-C { color: #FF9F0A; stroke: #FF9F0A; }
+  .grade-D, .fill-D { color: #FF453A; stroke: #FF453A; }
+
+  .bg-green  { background: #00FF41; }
+  .bg-amber  { background: #FFD60A; }
+  .bg-orange { background: #FF9F0A; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<h1 class="page-title">APPNAME</h1>
+<p class="page-sub">Branch 03 — Trip Summary Design Preview</p>
+
+<div class="showcase">
+
+  <!-- ===== Screen 1: Trip End ===== -->
+  <div class="device-wrapper">
+    <span class="device-label">Trip End Screen</span>
+    <div class="phone" id="phone1">
+      <div class="scanlines"></div>
+      <div class="trip-end">
+
+        <!-- Radial Score -->
+        <div class="radial-score">
+          <svg viewBox="0 0 220 220">
+            <circle cx="110" cy="110" r="100" class="ring-track"/>
+            <circle cx="110" cy="110" r="100" class="ring-fill fill-A" id="ringFill" stroke-dasharray="0 628.32"/>
+          </svg>
+          <div class="score-center">
+            <div class="score-label">Global Score</div>
+            <div class="score-number grade-A" id="scoreNum">84</div>
+            <div class="score-sub">/100</div>
+          </div>
+        </div>
+
+        <div class="status-badge grade-A" id="statusBadge">ELITE STATUS • TOP 5%</div>
+
+        <div class="mini-stats">
+          <div class="stat-card">
+            <div class="stat-title">Distance</div>
+            <div class="stat-value" style="color:#ADFF2F">14.2 <span>km</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">G-Force</div>
+            <div class="stat-value" style="color:#ADFF2F">0.65 <span>G</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Eco Score</div>
+            <div class="stat-value" style="color:#ADFF2F">92<span>%</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Streak</div>
+            <div class="stat-value" style="color:#ADFF2F">6 <span>days</span></div>
+          </div>
+        </div>
+
+        <div class="bars">
+          <div class="bar-row">
+            <span class="bar-label">ACCEL</span>
+            <div class="bar-track"><div class="bar-fill bg-green" style="width:82%"></div></div>
+            <span class="bar-val">82</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">BRAKE</span>
+            <div class="bar-track"><div class="bar-fill bg-green" style="width:88%"></div></div>
+            <span class="bar-val">88</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">CORNER</span>
+            <div class="bar-track"><div class="bar-fill bg-amber" style="width:79%"></div></div>
+            <span class="bar-val">79</span>
+          </div>
+        </div>
+
+        <div class="xp-float">+245 XP</div>
+        <button class="btn btn-share">SHARE</button>
+        <button class="btn btn-hist">VIEW HISTORY</button>
+
+      </div>
+    </div>
+    <div class="controls">
+      <button onclick="setScore1(100,'S')">100 S</button>
+      <button onclick="setScore1(84,'A')">84 A</button>
+      <button onclick="setScore1(62,'B')">62 B</button>
+      <button onclick="setScore1(45,'C')">45 C</button>
+      <button onclick="setScore1(28,'D')">28 D</button>
+    </div>
+  </div>
+
+  <!-- ===== Screen 2: Badge Earned ===== -->
+  <div class="device-wrapper">
+    <span class="device-label">Badge Earned</span>
+    <div class="phone">
+      <div class="scanlines"></div>
+      <div class="trip-end" style="opacity:0.15; pointer-events:none;">
+        <div class="score-center">
+          <div class="score-number grade-A" style="font-size:48px;">84</div>
+        </div>
+      </div>
+      <div class="badge-overlay">
+        <div class="badge-star" style="color:#00FF41">★</div>
+        <div class="badge-name" style="color:#00FF41">PERFECT RUN</div>
+        <div class="badge-desc">Score 100 on a trip</div>
+        <div class="badge-cta">TAP TO CONTINUE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Screen 3: Rank Up ===== -->
+  <div class="device-wrapper">
+    <span class="device-label">Rank Up</span>
+    <div class="phone">
+      <div class="scanlines"></div>
+      <div class="rankup-screen">
+        <div class="rankup-label">RANK UP</div>
+        <div class="rankup-name" style="color:#00FF00">APEX</div>
+        <div class="rankup-sub">YOU ARE NOW APEX</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const circumference = 2 * Math.PI * 100;
+
+  function setScore1(score, grade) {
+    const ring = document.getElementById('ringFill');
+    const num = document.getElementById('scoreNum');
+    const badge = document.getElementById('statusBadge');
+
+    const colors = {S:'#00FF41', A:'#ADFF2F', B:'#FFD60A', C:'#FF9F0A', D:'#FF453A'};
+    const color = colors[grade];
+
+    ring.style.stroke = color;
+    ring.style.strokeDasharray = `${(score/100)*circumference} ${circumference}`;
+
+    num.className = 'score-number grade-' + grade;
+    num.textContent = score;
+
+    badge.className = 'status-badge grade-' + grade;
+  }
+
+  // Initialize
+  setTimeout(() => setScore1(84,'A'), 300);
+</script>
+
+</body>
+</html>

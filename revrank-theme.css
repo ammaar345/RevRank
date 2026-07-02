@@ -1,0 +1,1208 @@
+/* ===================================================================
+   revrank-theme.css — RevRank Design System v2.0 (FULL TOKENS)
+   Retro-Futuristic CRT Terminal / Cyberpunk HUD Aesthetic
+
+   🔗  This file is THE design token source of truth.  Referenced
+      by CLAUDE.md.  Every screen HTML imports this via @import.
+
+   Sections:
+     1.  Font Imports
+     2.  CSS Custom Properties (Design Tokens)
+     3.  CSS Reset & Base
+     4.  CRT Scanline Overlay
+     5.  Vignette Overlay
+     6.  Chromatic Aberration Effect
+     7.  HUD Background Mesh
+     8.  Phosphor Glow Utilities
+     9.  Typography Classes
+     10. Pill Button System
+     11. Custom Icon / SVG Base
+     12. Ambient Micro-Glitch Keyframes
+     13. System Execution (Button Click) Animation
+     14. Typewriter / Text Reveal Keyframes
+     15. Blinking Cursor
+     16. Loading Bar (Glitchy Data Progress)
+     17. Number Count-Up Scaffolding
+     18. Scan-Fade / Data Entry Animations
+     19. Card & Surface Styles
+     20. Bottom Navigation
+     21. Slider / Range / Progress
+     22. Audio Design Tokens (commented reference)
+     23. Matrix Rain Canvas Container
+   =================================================================== */
+
+
+/* ========== 1. FONT IMPORTS ========== */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=VT323&family=Fira+Code:wght@300;400;500;600;700&display=swap');
+
+
+/* ========== 2. DESIGN TOKENS ========== */
+:root {
+  /* --- 2a. Core Palette --- */
+  --void:           #000000;
+  --surface-0:      #050505;
+  --surface-1:      #0A0A0A;
+  --surface-2:      #121212;
+  --surface-3:      #1A1A1A;
+  --surface-4:      #222222;
+
+  /* --- 2b. Phosphor Green Family --- */
+  --phosphor:       #00FF66;        /* P1 phosphor green — primary */
+  --phosphor-dim:   #00CC44;        /* dimmed variant */
+  --phosphor-muted: #008833;        /* muted / background */
+  --phosphor-dark:  #003D1A;        /* very dark — used for borders */
+  --phosphor-bg:    rgba(0,255,102,0.04);  /* surface tint */
+  --phosphor-glow:  rgba(0,255,102,0.20);  /* standard glow */
+  --phosphor-glow-sm: rgba(0,255,102,0.08); /* subtle glow */
+  --phosphor-glow-lg: rgba(0,255,102,0.35); /* intense glow */
+  --phosphor-text:  #00FF66;        /* text color */
+  --phosphor-text-dim: #00BB55;     /* dimmer text */
+  --phosphor-track: #003D1A;        /* progress track */
+
+  /* --- 2c. Legacy Matrix Green (compatibility) --- */
+  --matrix:         #00FF41;
+  --matrix-dim:     #00C032;
+  --matrix-muted:   #004D14;
+  --matrix-glow:    rgba(0,255,65,0.18);
+  --matrix-glow-sm: rgba(0,255,65,0.06);
+
+  /* --- 2d. Score Semantic Colors --- */
+  --score-green:    #00FF41;         /* 90+ */
+  --score-lime:     #ADFF2F;         /* 75+ */
+  --score-amber:    #FFD700;         /* 55+ */
+  --score-orange:   #FF6B00;         /* 35+ */
+  --score-red:      #FF453A;         /* below 35 */
+
+  /* --- 2e. Metric Accent Colors --- */
+  --cyan:           #00B4D8;
+  --cyan-dim:       #0088A8;
+  --amber:          #FFD700;
+  --orange:         #FF6B00;
+  --pink:           #FF2E88;
+
+  /* --- 2f. Neutral / Text --- */
+  --white:          #FFFFFF;
+  --text-primary:   #E8E8E8;
+  --text-dim:       #888888;
+  --text-faint:     #555555;
+  --text-track:     #333333;
+
+  /* --- 2g. Borders / Dividers --- */
+  --border:         rgba(255,255,255,0.07);
+  --border-bright:  rgba(0,255,102,0.25);
+  --border-glow:    rgba(0,255,102,0.40);
+
+  /* --- 2h. Border Radii --- */
+  --radius-sm:      8px;
+  --radius-md:      14px;
+  --radius-lg:      22px;
+  --radius-pill:    999px;
+
+  /* --- 2i. Typography --- */
+  --font-mono:      'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  --font-body:      'Rajdhani', 'Arial', sans-serif;
+  --font-display:   'Orbitron', 'Rajdhani', sans-serif;
+  --font-terminal:  'VT323', 'Courier New', monospace;
+  --font-code:      'Fira Code', 'JetBrains Mono', monospace;
+
+  /* --- 2j. Spacing (4px grid) --- */
+  --sp-1:            4px;
+  --sp-2:            8px;
+  --sp-3:            12px;
+  --sp-4:            16px;
+  --sp-5:            20px;
+  --sp-6:            24px;
+  --sp-8:            32px;
+  --sp-10:           40px;
+  --sp-12:           48px;
+  --sp-16:           64px;
+
+  /* --- 2k. Transitions --- */
+  --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:     cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-glitch:     cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --duration-fast:   150ms;
+  --duration-med:    300ms;
+  --duration-slow:   600ms;
+
+  /* --- 2l. CRT Specific --- */
+  --crt-scanline-opacity:  0.035;
+  --crt-vignette-opacity:  0.60;
+  --crt-chromatic-offset:  2px;
+  --crt-chromatic-opacity: 0.40;
+  --crt-glow-intensity:    0.25;
+  --crt-mesh-opacity:      0.020;
+
+  /* --- 2m. Matrix Rain --- */
+  --rain-density:   0.65;   /* 0-1, column frequency */
+  --rain-speed:     1.0;    /* 0.25-3, base fall speed */
+  --rain-char-brightness: 0.85;
+  --rain-opacity-idle: 0.35;
+  --rain-opacity-loading: 0.95;
+}
+
+
+/* ========== 3. CSS RESET & BASE ========== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html::-webkit-scrollbar { display: none; }
+
+body {
+  background: var(--void);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+  position: relative;
+}
+
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; height: auto; }
+button { font-family: inherit; cursor: pointer; }
+input, textarea, select {
+  font-family: inherit;
+  background: transparent;
+  color: inherit;
+  border: none;
+  outline: none;
+}
+
+
+/* ========== 4. CRT SCANLINE OVERLAY ========== */
+/* Usage: <div class="crt-scanlines"></div> as fixed overlay */
+.crt-scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9997;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0,0,0,var(--crt-scanline-opacity)) 3px,
+    rgba(0,0,0,var(--crt-scanline-opacity)) 4px
+  );
+}
+
+/* Scanline variant: phosphor-tinted scanlines (more authentic CRT feel) */
+.crt-scanlines--phosphor {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,255,102,var(--crt-scanline-opacity)) 2px,
+    rgba(0,255,102,var(--crt-scanline-opacity)) 4px
+  );
+}
+
+/* Fine scanline variant: thinner lines, less visible */
+.crt-scanlines--fine {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 1px,
+    rgba(0,0,0,calc(var(--crt-scanline-opacity) * 0.6)) 1px,
+    rgba(0,0,0,calc(var(--crt-scanline-opacity) * 0.6)) 2px
+  );
+}
+
+/* Horizontal retrace line animation (occasional CRT retrace) */
+.crt-retrace {
+  position: fixed;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--phosphor);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9998;
+  animation: crtRetrace 8s linear infinite;
+}
+
+@keyframes crtRetrace {
+  0%   { top: -2px; opacity: 0; }
+  0.1% { top: 0%;   opacity: 0.15; }
+  0.2% { top: 2px;  opacity: 0; }
+  100% { top: 100%; opacity: 0; }
+}
+
+
+/* ========== 5. VIGNETTE OVERLAY ========== */
+.crt-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9996;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    transparent 40%,
+    rgba(0,0,0,var(--crt-vignette-opacity)) 100%
+  );
+}
+
+/* Tinted vignette variant */
+.crt-vignette--tinted {
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    transparent 30%,
+    rgba(0,255,102,0.03) 50%,
+    rgba(0,0,0,var(--crt-vignette-opacity)) 100%
+  );
+}
+
+
+/* ========== 6. CHROMATIC ABERRATION EFFECT ========== */
+/* Apply to text elements for subtle R/G/B split */
+.chromatic-text {
+  position: relative;
+  display: inline-block;
+}
+
+.chromatic-text::before,
+.chromatic-text::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chromatic-text::before {
+  color: rgba(255, 0, 0, var(--crt-chromatic-opacity));
+  transform: translate(calc(var(--crt-chromatic-offset) * 1px), 0);
+  z-index: -1;
+}
+
+.chromatic-text::after {
+  color: rgba(0, 80, 255, var(--crt-chromatic-opacity));
+  transform: translate(calc(var(--crt-chromatic-offset) * -1px), 0);
+  z-index: -2;
+}
+
+
+/* ========== 7. HUD BACKGROUND MESH ========== */
+.hud-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0,255,102,0.045) 0%, transparent 65%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,255,102,var(--crt-mesh-opacity)) 3px,
+      rgba(0,255,102,var(--crt-mesh-opacity)) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(0,255,102,var(--crt-mesh-opacity)) 3px,
+      rgba(0,255,102,var(--crt-mesh-opacity)) 4px
+    );
+}
+
+
+/* ========== 8. PHOSPHOR GLOW UTILITIES ========== */
+.phosphor-glow {
+  text-shadow:
+    0 0 7px var(--phosphor-glow),
+    0 0 20px var(--phosphor-glow),
+    0 0 40px var(--phosphor-glow-sm);
+}
+
+.phosphor-glow--sm {
+  text-shadow: 0 0 10px var(--phosphor-glow-sm);
+}
+
+.phosphor-glow--lg {
+  text-shadow:
+    0 0 10px var(--phosphor-glow),
+    0 0 30px var(--phosphor-glow),
+    0 0 60px var(--phosphor-glow-sm),
+    0 0 100px var(--phosphor-glow-sm);
+}
+
+.phosphor-box-glow {
+  box-shadow:
+    0 0 10px var(--phosphor-glow-sm),
+    0 0 30px var(--phosphor-glow-sm),
+    inset 0 0 20px rgba(0,255,102,0.03);
+}
+
+
+/* ========== 9. TYPOGRAPHY CLASSES ========== */
+.display-large {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: var(--phosphor);
+}
+
+.display-medium {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.display-small {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.mono-value {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  line-height: 1;
+  color: var(--white);
+}
+
+.mono-heading {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--phosphor);
+}
+
+.terminal-text {
+  font-family: var(--font-terminal);
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--phosphor);
+}
+
+.body-text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.hud-number {
+  font-family: var(--font-mono);
+  font-size: 64px;
+  line-height: 1;
+  color: var(--phosphor);
+  text-shadow: 0 0 15px var(--phosphor-glow-sm);
+}
+
+.hud-number span {
+  font-size: 18px;
+  color: var(--text-dim);
+}
+
+
+/* ========== 10. PILL BUTTON SYSTEM ========== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition:
+    transform var(--duration-fast) var(--ease-out-expo),
+    box-shadow var(--duration-med) ease,
+    background var(--duration-med) ease,
+    opacity var(--duration-med) ease;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:hover { transform: scale(1.02); }
+.btn:active { transform: scale(0.97); }
+
+/* Primary solid */
+.btn--primary {
+  background: var(--phosphor);
+  color: var(--void);
+  box-shadow: 0 0 16px var(--phosphor-glow);
+}
+.btn--primary:hover {
+  box-shadow: 0 0 30px var(--phosphor-glow), 0 0 60px var(--phosphor-glow-sm);
+}
+
+/* Outline */
+.btn--outline {
+  color: var(--phosphor);
+  border: 1.5px solid var(--phosphor);
+  background: rgba(0,255,102,0.06);
+}
+.btn--outline:hover {
+  background: rgba(0,255,102,0.14);
+  box-shadow: 0 0 20px var(--phosphor-glow-sm);
+}
+
+/* Ghost */
+.btn--ghost {
+  color: var(--text-dim);
+  background: transparent;
+}
+.btn--ghost:hover {
+  color: var(--white);
+  background: rgba(255,255,255,0.04);
+}
+
+/* Danger */
+.btn--danger {
+  color: var(--score-red);
+  border: 1.5px solid var(--score-red);
+  background: rgba(255,69,58,0.08);
+}
+.btn--danger:hover {
+  background: rgba(255,69,58,0.16);
+  box-shadow: 0 0 20px rgba(255,69,58,0.15);
+}
+
+/* Full-width button */
+.btn--full { width: 100%; }
+
+/* Button with glitch-execution animation (triggered by js) */
+.btn-executing {
+  pointer-events: none;
+  animation: btnExecute 0.5s var(--ease-glitch) forwards;
+}
+
+.btn-executing::after {
+  content: '⏣ EXECUTING...';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--phosphor);
+  color: var(--void);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  animation: btnExecuteText 0.5s steps(4) forwards;
+}
+
+
+/* ========== 11. CUSTOM ICON / SVG BASE ========== */
+.icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+  transition: stroke var(--duration-fast) ease;
+}
+
+.icon--sm { width: 16px; height: 16px; }
+.icon--md { width: 28px; height: 28px; }
+.icon--lg { width: 44px; height: 44px; }
+
+.icon--filled { fill: currentColor; }
+
+.icon--glow {
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.icon--glow-lg {
+  filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor);
+}
+
+/* Icon container for consistent placement */
+.icon-box {
+  width: 110px;
+  height: 110px;
+  border: 2px solid var(--phosphor);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 40px var(--phosphor-glow-sm);
+  background: rgba(0,255,102,0.03);
+}
+
+
+/* ========== 12. AMBIENT MICRO-GLITCH KEYFRAMES ========== */
+/*
+  Every page gets a subtle micro-glitch every 4-8s, randomly delayed.
+  Apply `.glitch-ambient` to elements you want to glitch.
+  The JS (revrank-theme.js) manages randomized scheduling.
+*/
+
+@keyframes glitchMicro {
+  0%   { transform: translate(0); opacity: 1; }
+  2%   { transform: translate(-1px, 1px) skewX(-0.5deg); opacity: 0.85;
+         text-shadow: -2px 0 rgba(255,0,0,0.5), 2px 0 rgba(0,80,255,0.5); }
+  4%   { transform: translate(1px, -1px) skewX(0.5deg); opacity: 0.9;
+         text-shadow: 1px 0 rgba(255,0,0,0.3), -1px 0 rgba(0,80,255,0.3); }
+  6%   { transform: translate(0); opacity: 1; text-shadow: none; }
+  100% { transform: translate(0); opacity: 1; }
+}
+
+/* VERTICAL SHIFT variant — simulates analog vertical jitter */
+@keyframes glitchVertical {
+  0%   { transform: translateY(0); clip-path: inset(0); }
+  3%   { transform: translateY(-2px); clip-path: inset(10% 0 30% 0); }
+  5%   { transform: translateY(1px); clip-path: inset(40% 0 10% 0); }
+  8%   { transform: translateY(0); clip-path: inset(0); }
+  100% { transform: translateY(0); clip-path: inset(0); }
+}
+
+/* Flicker — quick opacity dropout */
+@keyframes glitchFlicker {
+  0%, 100% { opacity: 1; }
+  1%       { opacity: 0.3; }
+  2%       { opacity: 0.8; }
+  3%       { opacity: 0.2; }
+  4%       { opacity: 1; }
+}
+
+/* Horizontal pixel shift — simulates CRT H-hold loss */
+@keyframes glitchHShift {
+  0%, 100% { transform: translateX(0); }
+  4%       { transform: translateX(-3px); }
+  5%       { transform: translateX(3px); }
+  6%       { transform: translateX(-1px); }
+  7%       { transform: translateX(0); }
+}
+
+/* Glitch class with random delay — JS applies after random interval */
+.glitch-triggered {
+  animation: glitchMicro 0.15s var(--ease-glitch) 1;
+}
+
+
+/* ========== 13. SYSTEM EXECUTION ANIMATION ========== */
+@keyframes btnExecute {
+  0%   { transform: scale(1); }
+  15%  { transform: scale(0.95); filter: brightness(2); }
+  25%  { transform: scale(0.98) translateX(-2px); }
+  35%  { transform: translateX(2px); filter: brightness(1.5); }
+  50%  { transform: scale(0.96); filter: invert(1); }
+  65%  { transform: translateX(-1px); filter: brightness(2); }
+  80%  { transform: scale(1.02); filter: invert(0); }
+  100% { transform: scale(1); }
+}
+
+@keyframes btnExecuteText {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Full-screen jitter on execution */
+.screen-jitter {
+  animation: screenJitter 0.4s var(--ease-glitch) forwards;
+}
+
+@keyframes screenJitter {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  10%  { transform: translate(-3px, 2px) rotate(-0.5deg); }
+  20%  { transform: translate(3px, -1px) rotate(0.5deg); }
+  30%  { transform: translate(-2px, -2px) rotate(-0.3deg); }
+  40%  { transform: translate(2px, 3px) rotate(0.4deg); }
+  50%  { transform: translate(-1px, -1px) rotate(-0.2deg); }
+  60%  { transform: translate(1px, -2px) rotate(0.1deg); }
+  70%  { transform: translate(-2px, 2px) rotate(-0.4deg); }
+  80%  { transform: translate(0, -1px) rotate(0deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Color inversion flash on execute */
+.color-invert-flash {
+  animation: colorInvert 0.3s ease forwards;
+}
+
+@keyframes colorInvert {
+  0%   { filter: invert(0); }
+  30%  { filter: invert(1); }
+  100% { filter: invert(0); }
+}
+
+
+/* ========== 14. TYPEWRITER / TEXT REVEAL ========== */
+.typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid transparent;
+  width: 0;
+  animation:
+    typewriter var(--typewriter-duration, 2s) steps(var(--typewriter-steps, 30)) forwards,
+    cursorBlink 0.8s steps(1) var(--typewriter-duration, 2s) infinite;
+}
+
+.typewriter--inline {
+  display: inline-block;
+  vertical-align: bottom;
+}
+
+/* Delayed variant for multi-line typewriter */
+.typewriter--d1 { animation-delay: 0s, var(--typewriter-duration, 2s); }
+.typewriter--d2 { animation-delay: 0.5s, calc(0.5s + var(--typewriter-duration, 2s)); }
+.typewriter--d3 { animation-delay: 1.0s, calc(1.0s + var(--typewriter-duration, 2s)); }
+
+@keyframes typewriter {
+  to { width: 100%; }
+}
+
+
+/* ========== 15. BLINKING CURSOR ========== */
+.cursor-blink {
+  display: inline-block;
+  width: 10px;
+  height: 1.2em;
+  background: var(--phosphor);
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: cursorBlink 0.8s steps(1) infinite;
+}
+
+.cursor-blink--thin { width: 6px; }
+.cursor-blink--block { width: 0.6em; height: 1.1em; }
+.cursor-blink--dim { background: var(--text-faint); }
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+
+/* ========== 16. LOADING BAR (GLITCHY DATA PROGRESS) ========== */
+.loading-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--text-track);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-bar__fill {
+  height: 100%;
+  width: 0%;
+  background: var(--phosphor);
+  border-radius: var(--radius-pill);
+  position: relative;
+  filter: drop-shadow(0 0 4px var(--phosphor));
+  transition: width 0.3s var(--ease-out-expo);
+}
+
+/* Glitchy progress — erratic fill simulation */
+.loading-bar--glitch .loading-bar__fill {
+  animation: glitchyProgress var(--load-duration, 2.5s) var(--ease-glitch) forwards;
+}
+
+@keyframes glitchyProgress {
+  0%   { width: 0%; }
+  10%  { width: 12%; }
+  15%  { width: 8%; }
+  25%  { width: 30%; }
+  30%  { width: 22%; }
+  45%  { width: 55%; }
+  50%  { width: 48%; }
+  65%  { width: 72%; }
+  70%  { width: 65%; }
+  85%  { width: 88%; }
+  90%  { width: 82%; }
+  95%  { width: 96%; }
+  98%  { width: 92%; }
+  100% { width: 100%; }
+}
+
+/* Loading status text with pseudo-code strings */
+.loading-status {
+  font-family: var(--font-terminal);
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-align: center;
+  margin-top: var(--sp-3);
+}
+
+.loading-status::before {
+  content: '> ';
+  color: var(--phosphor);
+}
+
+/* Scanline sweep loading effect */
+.loading-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0,255,102,0.08) 50%,
+    transparent 100%
+  );
+  width: 40%;
+  animation: sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0%   { left: -40%; }
+  100% { left: 140%; }
+}
+
+
+/* ========== 17. NUMBER COUNT-UP ========== */
+/* JS handles the actual counting; this provides the visual state */
+.count-up {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Number reveal (digit flip) */
+.digit-reveal {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  line-height: 1;
+}
+
+.digit-reveal span {
+  display: block;
+  animation: digitFlip 0.4s var(--ease-out-expo) forwards;
+}
+
+@keyframes digitFlip {
+  0%   { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+
+/* ========== 18. SCAN-FADE / DATA ENTRY ANIMATIONS ========== */
+@keyframes scanFadeIn {
+  0%   { opacity: 0; clip-path: inset(0 0 100% 0); }
+  100% { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+
+.scan-fade-in {
+  animation: scanFadeIn 0.6s var(--ease-out-expo) forwards;
+}
+
+@keyframes scanFadeInDelay {
+  0%   { opacity: 0; clip-path: inset(0 0 100% 0); }
+  100% { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+
+.scan-fade-in--d1 { animation-delay: 0.1s; animation-fill-mode: both; }
+.scan-fade-in--d2 { animation-delay: 0.25s; animation-fill-mode: both; }
+.scan-fade-in--d3 { animation-delay: 0.45s; animation-fill-mode: both; }
+.scan-fade-in--d4 { animation-delay: 0.70s; animation-fill-mode: both; }
+.scan-fade-in--d5 { animation-delay: 1.00s; animation-fill-mode: both; }
+
+/* Data row entry — each row fades in with a scan line */
+.data-entry {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s var(--ease-out-expo), transform 0.4s var(--ease-out-expo);
+}
+
+.data-entry.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+/* ========== 19. CARD & SURFACE STYLES ========== */
+.card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-5);
+}
+
+.card--bordered {
+  border-color: var(--border-bright);
+}
+
+.card--glow {
+  border-color: var(--border-bright);
+  box-shadow: 0 0 15px var(--phosphor-glow-sm), inset 0 0 20px rgba(0,255,102,0.02);
+}
+
+.card--interactive {
+  cursor: pointer;
+  transition: border-color var(--duration-fast) ease, background var(--duration-fast) ease;
+}
+
+.card--interactive:hover {
+  border-color: var(--border-bright);
+  background: var(--surface-3);
+}
+
+.card--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.surface-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.surface-row:last-child { border-bottom: none; }
+
+
+/* ========== 20. BOTTOM NAVIGATION ========== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px var(--sp-2) 24px;
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+}
+
+.bottom-nav__item {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 6px 4px;
+  border-radius: 10px;
+  transition: color var(--duration-fast) ease, background var(--duration-med) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav__item:hover { color: var(--text-dim); }
+
+.bottom-nav__item.active {
+  color: var(--phosphor);
+}
+
+.bottom-nav__item.active .bottom-nav__dot {
+  opacity: 1;
+}
+
+.bottom-nav__item svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.bottom-nav__item.active svg {
+  fill: currentColor;
+  filter: drop-shadow(0 0 7px var(--phosphor));
+}
+
+.bottom-nav__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-top: 2px;
+  box-shadow: 0 0 6px var(--phosphor-glow);
+  opacity: 0;
+  transition: opacity var(--duration-fast) ease;
+}
+
+
+/* ========== 21. SLIDER / RANGE / PROGRESS ========== */
+progress, .progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--text-track);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  border: none;
+}
+
+progress::-webkit-progress-bar {
+  background: var(--text-track);
+  border-radius: var(--radius-pill);
+}
+
+progress::-webkit-progress-value {
+  background: var(--phosphor);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 8px var(--phosphor-glow);
+  filter: drop-shadow(0 0 4px var(--phosphor));
+  transition: width 0.5s var(--ease-out-expo);
+}
+
+progress::-moz-progress-bar {
+  background: var(--phosphor);
+  border-radius: var(--radius-pill);
+}
+
+/* Range slider (custom thumb) */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--text-track);
+  border-radius: var(--radius-pill);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--phosphor);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--phosphor-glow);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--phosphor);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 10px var(--phosphor-glow);
+}
+
+
+/* ========== 22. AUDIO DESIGN TOKENS ========== */
+/*
+  Web Audio API sound design — implemented in revrank-theme.js
+  References for tuning:
+
+  Ambient hum:
+    - Oscillator: Sine wave @ 55Hz + 87Hz (sub + fifth)
+    - Gain: 0.02–0.04 (barely audible)
+    - Optional: LFO modulation at 0.3Hz for slight movement
+
+  Text generation clicks:
+    - Buffer: 1ms white noise burst
+    - Gain: 0.01–0.03
+    - Bandpass: 2kHz–4kHz
+    - Timing: 30–80ms random interval per character
+
+  Glitch SFX:
+    - Buffer: 15ms noise burst
+    - Gain: 0.08–0.15
+    - Optional: pitch drop (playbackRate 1.0 → 0.3 over 50ms)
+
+  Button hover blip:
+    - Oscillator: Sine 1200Hz → 600Hz frequency sweep, 60ms
+    - Gain: 0.03
+
+  Button execution metallic chime:
+    - Oscillator: Sine 523Hz (C5) + 659Hz (E5) + 784Hz (G5) chord
+    - Gain: 0.08–0.12
+    - Duration: 300ms with exponential decay
+    - Optional: slight noise burst attack (5ms)
+*/
+
+.audio-ready {
+  /* applied by JS once AudioContext is initialized */
+}
+
+
+/* ========== 23. MATRIX RAIN CANVAS CONTAINER ========== */
+.matrix-rain-container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.matrix-rain-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: var(--rain-opacity-idle);
+  transition: opacity 0.8s ease;
+}
+
+.matrix-rain-container.is-loading canvas {
+  opacity: var(--rain-opacity-loading);
+}
+
+
+/* ========== 24. PHONE FRAME (for design previews) ========== */
+.phone-frame {
+  width: 375px;
+  height: 812px;
+  border: 1px solid var(--border-bright);
+  border-radius: 36px;
+  background: var(--void);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow:
+    0 0 40px var(--phosphor-glow-sm),
+    0 0 0 4px var(--surface-2),
+    0 24px 70px rgba(0,0,0,0.75);
+}
+
+
+/* ========== 25. SCREEN LAYOUT ========== */
+.screen {
+  padding: 52px 24px 36px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.screen--centered {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.screen--no-pad {
+  padding: 0;
+}
+
+.screen--nav {
+  padding: 52px 24px 80px;
+}
+
+.screen--dark {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+}
+
+
+/* ========== 26. UTILITY CLASSES ========== */
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 0.5s var(--ease-out-expo) forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+.fade-in--d1 { animation-delay: 0.2s; animation-fill-mode: both; }
+.fade-in--d2 { animation-delay: 0.4s; animation-fill-mode: both; }
+.fade-in--d3 { animation-delay: 0.6s; animation-fill-mode: both; }
+.fade-in--d4 { animation-delay: 0.8s; animation-fill-mode: both; }
+.fade-in--d5 { animation-delay: 1.0s; animation-fill-mode: both; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: var(--sp-1); }
+.gap-2 { gap: var(--sp-2); }
+.gap-3 { gap: var(--sp-3); }
+.gap-4 { gap: var(--sp-4); }
+.gap-5 { gap: var(--sp-5); }
+.gap-6 { gap: var(--sp-6); }
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-phosphor { color: var(--phosphor); }
+.text-dim { color: var(--text-dim); }
+.text-faint { color: var(--text-faint); }
+.text-white { color: var(--white); }
+
+.mt-2 { margin-top: var(--sp-2); }
+.mt-3 { margin-top: var(--sp-3); }
+.mt-4 { margin-top: var(--sp-4); }
+.mt-5 { margin-top: var(--sp-5); }
+.mt-6 { margin-top: var(--sp-6); }
+.mt-8 { margin-top: var(--sp-8); }
+.mb-2 { margin-bottom: var(--sp-2); }
+.mb-3 { margin-bottom: var(--sp-3); }
+.mb-4 { margin-bottom: var(--sp-4); }
+.mb-5 { margin-bottom: var(--sp-5); }
+.mb-6 { margin-bottom: var(--sp-6); }
+.mb-8 { margin-bottom: var(--sp-8); }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.inset-0 { inset: 0; }
+.z-1 { z-index: 1; }
+.z-2 { z-index: 2; }
+.z-10 { z-index: 10; }
+.p-4 { padding: var(--sp-4); }
+.p-5 { padding: var(--sp-5); }
+.px-4 { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+.py-3 { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
+.py-4 { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }

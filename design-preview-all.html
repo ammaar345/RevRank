@@ -1,0 +1,1128 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TripRank — Full Design Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@700;900&display=swap');
+	  :root{
+	    --void:#000;
+	    --surface:#0A0A0A;
+	    --surface-2:#121212;
+	    --surface-3:#1a1a1a;
+	    --matrix:#00FF41;
+	    --matrix-dim:#00C032;
+	    --matrix-muted:#004D14;
+	    --matrix-glow:rgba(0,255,65,.18);
+	    --matrix-glow-sm:rgba(0,255,65,.06);
+	    --white:#fff;
+	    --text-dim:#888;
+	    --text-faint:#555;
+	    --track:#222;
+	    --border:rgba(255,255,255,.07);
+	    --border-bright:rgba(0,255,65,.3);
+	    --cyan:#00B4D8;
+	    --amber:#FFD700;
+	    --orange:#FF6B00;
+	    --pink:#FF2E88;
+	    --font-mono:'JetBrains Mono',monospace;
+	    --font-body:'Rajdhani',sans-serif;
+	    --font-display:'Orbitron',sans-serif;
+	    --radius:14px;
+	    --radius-sm:8px;
+	    --radius-lg:22px;
+	    --radius-pill:999px;
+	  }
+	  *{box-sizing:border-box;margin:0;padding:0;-ms-overflow-style:none;scrollbar-width:none}
+	  *::-webkit-scrollbar{display:none}
+	  a{color:inherit;text-decoration:none}
+	  body{background:var(--void);color:var(--white);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+	  .hud-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 40% at 50% 0%,rgba(0,255,65,.045) 0%,transparent 65%),repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,65,.014) 3px,rgba(0,255,65,.014) 4px),repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(0,255,65,.014) 3px,rgba(0,255,65,.014) 4px)}
+	  h1{font-family:var(--font-mono);font-size:13px;letter-spacing:7px;color:var(--matrix);text-transform:uppercase;text-align:center;padding:48px 0 8px;margin:0;position:relative;z-index:1;text-shadow:0 0 20px var(--matrix-glow-sm)}
+	  h2{font-family:var(--font-body);font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;text-align:center;margin-bottom:40px;position:relative;z-index:1}
+	  .branch{width:100%;padding:40px 20px;border-bottom:1px solid var(--border);position:relative;z-index:1}
+	  .branch-title{font-family:var(--font-mono);font-size:12px;letter-spacing:4px;color:var(--matrix);text-transform:uppercase;text-align:center;margin-bottom:4px;text-shadow:0 0 16px var(--matrix-glow-sm)}
+	  .branch-sub{font-family:var(--font-body);font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:32px}
+	  .showcase{display:flex;justify-content:center;flex-wrap:wrap;gap:48px;max-width:1600px;margin:0 auto}
+	  .device-wrapper{display:flex;flex-direction:column;align-items:center;gap:14px}
+	  .device-label{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase}
+	  .phone{width:375px;height:812px;border:1px solid var(--border-bright);border-radius:36px;background:var(--void);position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 0 40px rgba(0,255,65,.1),0 0 0 4px var(--surface-2),0 24px 70px rgba(0,0,0,.75)}
+	  .scanlines{position:absolute;inset:0;pointer-events:none;z-index:50;opacity:.025;background:repeating-linear-gradient(to bottom,transparent,transparent 2px,rgba(0,255,65,.055) 2px,rgba(0,255,65,.055) 4px)}
+	  .glow-center{position:absolute;width:200px;height:200px;top:50%;left:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(0,255,65,.06) 0%,transparent 70%);pointer-events:none;z-index:0;border-radius:50%}
+
+	  /* === Shared === */
+	  .screen{padding:52px 24px 36px;height:100%;display:flex;flex-direction:column;overflow-y:auto;position:relative;z-index:1}
+	  .screen-nav{padding:52px 24px 36px;height:100%;display:flex;flex-direction:column;overflow-y:auto;position:relative;z-index:1}
+	  .screen-dark{padding:0;height:100%;display:flex;flex-direction:column;overflow-y:auto;position:relative;z-index:1}
+	  .mono-label{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase}
+
+	  /* === PILL BUTTONS with solid fill, hover/active/tap === */
+	  .btn{width:100%;padding:14px 20px;border:none;font-family:var(--font-mono);font-size:12px;letter-spacing:3px;text-transform:uppercase;text-align:center;background:transparent;cursor:pointer;border-radius:var(--radius-pill);margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .15s ease,box-shadow .25s ease,background .25s ease}
+	  .btn:hover{transform:scale(1.02)}
+	  .btn:active{transform:scale(0.97)}
+	  .btn-matrix{background:var(--matrix);color:var(--void);box-shadow:0 0 16px var(--matrix-glow)}
+	  .btn-matrix:hover{box-shadow:0 0 30px var(--matrix-glow)}
+	  .btn-outline{color:var(--matrix);border:1.5px solid var(--matrix);background:rgba(0,255,65,.06)}
+	  .btn-outline:hover{background:rgba(0,255,65,.14);box-shadow:0 0 20px var(--matrix-glow-sm)}
+	  .btn-ghost{color:var(--text-dim);border-color:transparent;background:transparent}
+	  .btn-ghost:hover{color:var(--white);background:rgba(255,255,255,.04)}
+	  .btn-solid{background:var(--matrix);color:var(--void);border:none;box-shadow:0 0 20px var(--matrix-glow);padding:16px 24px;font-size:14px;width:100%;cursor:pointer;font-family:var(--font-mono);letter-spacing:3px;text-transform:uppercase;border-radius:var(--radius-pill);transition:transform .15s ease,box-shadow .25s ease}
+	  .btn-solid:hover{transform:scale(1.02);box-shadow:0 0 35px var(--matrix-glow)}
+	  .btn-solid:active{transform:scale(0.97)}
+
+	  /* === Bottom Nav with SVG icons + stacked icon+text === */
+	  .bottom-nav{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:10px 8px 24px;background:rgba(10,10,10,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);z-index:60}
+	  .bottom-nav button{background:none;border:none;color:var(--text-faint);font-family:var(--font-mono);font-size:7.5px;letter-spacing:.5px;text-transform:uppercase;flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:6px 4px;border-radius:10px;transition:color .25s ease,background .3s ease}
+	  .bottom-nav button.active{color:var(--matrix)}
+	  .bottom-nav button.active .nav-dot{opacity:1}
+	  .bottom-nav button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+	  .bottom-nav button.active svg{fill:currentColor;filter:drop-shadow(0 0 7px var(--matrix))}
+	  .bottom-nav .nav-dot{width:5px;height:5px;border-radius:50%;background:currentColor;margin-top:2px;box-shadow:0 0 6px var(--matrix-glow);opacity:0;transition:opacity .25s ease}
+
+	  /* === Onboarding === */
+	  .onboarding{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px;text-align:center;position:relative;z-index:1}
+	  .ob-icon{width:110px;height:110px;border:2px solid var(--matrix);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;margin-bottom:32px;box-shadow:0 0 40px var(--matrix-glow);background:rgba(0,255,65,.03)}
+	  .ob-icon svg{width:44px;height:44px;stroke:var(--matrix);fill:none}
+	  .ob-head{font-family:var(--font-mono);font-size:22px;color:var(--white);letter-spacing:1px;margin-bottom:12px}
+	  .ob-body{font-size:14px;color:var(--text-dim);line-height:1.6;margin-bottom:40px;max-width:280px}
+	  .ob-dots{display:flex;gap:8px;margin-bottom:24px}
+	  .ob-dots span{width:8px;height:8px;border-radius:var(--radius-pill);background:var(--track)}
+	  .ob-dots span.active{background:var(--matrix);box-shadow:0 0 10px var(--matrix-glow);width:24px}
+	  .ob-skip{font-size:12px;color:var(--text-dim);margin-top:16px;cursor:pointer;transition:color .15s ease}
+	  .ob-skip:hover{color:var(--white)}
+
+	  /* === Sign In === */
+	  .signin-top{flex:1;display:flex;align-items:center;justify-content:center;padding:80px 0}
+	  .signin-logo{font-family:var(--font-display);font-size:36px;color:var(--matrix);letter-spacing:4px;text-align:center}
+	  .signin-sub{font-size:12px;color:var(--text-dim);text-align:center;margin-top:8px;letter-spacing:3px}
+	  .signin-bottom{padding:0 32px 40px}
+
+	  /* === Live HUD === */
+	  .hud-top{padding:40px 20px 0;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
+	  .hud-speed{font-family:var(--font-mono);font-size:64px;line-height:1}
+	  .hud-speed span{font-size:16px;color:var(--text-dim)}
+	  .hud-label{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase}
+	  .hud-score{font-family:var(--font-mono);font-size:32px;color:var(--matrix);text-shadow:0 0 15px var(--matrix-glow-sm)}
+	  .hud-map{background:var(--surface-2);height:300px;margin:20px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+	  .hud-map::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 1px,rgba(0,255,65,.05) 1px,rgba(0,255,65,.05) 2px);pointer-events:none}
+	  .hud-map-label{color:var(--text-dim);font-size:11px}
+	  .hud-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px;position:relative;z-index:1}
+	  .hud-metric{background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:var(--radius-sm)}
+	  .hud-metric-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+	  .hud-metric-val{font-family:var(--font-mono);font-size:22px}
+	  .hud-btn{width:calc(100% - 40px);margin:16px auto 0;padding:16px;font-family:var(--font-mono);font-size:14px;letter-spacing:3px;text-transform:uppercase;text-align:center;background:var(--matrix);color:var(--void);border:none;cursor:pointer;border-radius:var(--radius-pill);box-shadow:0 0 24px var(--matrix-glow);transition:transform .15s ease,box-shadow .25s ease;z-index:1;position:relative}
+	  .hud-btn:hover{transform:scale(1.02);box-shadow:0 0 40px var(--matrix-glow)}
+	  .hud-btn:active{transform:scale(0.97)}
+
+	  /* === Home === */
+	  .home-header{padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center}
+	  .home-greet{font-size:13px;color:var(--text-dim)}
+	  .home-greet strong{color:var(--white);font-weight:600}
+	  .home-avatar{width:40px;height:40px;border:1px solid var(--matrix);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:16px;color:var(--matrix)}
+	  .home-rank-card{background:var(--surface-2);border:1px solid var(--border);margin:16px 20px;padding:20px;border-radius:var(--radius-sm)}
+	  .home-rank-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+	  .home-rank-title{font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase}
+	  .home-rank-badge{font-family:var(--font-mono);font-size:10px;color:var(--matrix);border:1px solid var(--matrix);padding:3px 8px;border-radius:var(--radius-pill)}
+	  .home-progress{height:6px;background:var(--track);margin-bottom:8px;border-radius:var(--radius-pill);overflow:hidden}
+	  .home-progress-fill{height:100%;width:67%;background:var(--matrix);border-radius:var(--radius-pill);box-shadow:0 0 8px var(--matrix-glow);filter:drop-shadow(0 0 4px var(--matrix))}
+	  .home-progress-label{font-family:var(--font-mono);font-size:10px;color:var(--text-dim)}
+	  .home-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px 16px}
+	  .home-stat{background:var(--surface-2);border:1px solid var(--border);padding:14px;border-radius:var(--radius-sm)}
+	  .home-stat-label{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+	  .home-stat-val{font-family:var(--font-mono);font-size:24px;color:var(--white)}
+	  .home-challenges{padding:0 20px;margin-bottom:20px}
+	  .home-ch-head{font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+	  .home-ch-item{background:var(--surface-2);border:1px solid var(--border);padding:14px;margin-bottom:8px;border-radius:var(--radius-sm)}
+	  .home-ch-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+	  .home-ch-name{font-size:13px;color:var(--white)}
+	  .home-ch-reward{font-family:var(--font-mono);font-size:10px;color:var(--matrix)}
+	  .home-ch-bar{height:6px;background:var(--track);border-radius:var(--radius-pill);overflow:hidden}
+	  .home-ch-bar-fill{height:100%;width:45%;background:var(--matrix);border-radius:var(--radius-pill);filter:drop-shadow(0 0 4px var(--matrix))}
+	  .home-fab{width:56px;height:56px;border:2px solid var(--matrix);border-radius:var(--radius);background:var(--void);position:fixed;bottom:80px;right:20px;color:var(--matrix);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:24px;cursor:pointer;z-index:60;box-shadow:0 0 20px var(--matrix-glow-sm);transition:transform .15s ease,box-shadow .25s ease}
+	  .home-fab:hover{transform:scale(1.08);box-shadow:0 0 30px var(--matrix-glow)}
+	  .home-fab:active{transform:scale(0.95)}
+
+	  /* === Trip End (Score) === */
+	  .score-radial{position:relative;width:220px;height:220px;margin:0 auto 20px}
+	  .score-radial svg{width:100%;height:100%;transform:rotate(-90deg)}
+	  .score-radial .track{fill:none;stroke:var(--track);stroke-width:8;stroke-linecap:round}
+	  .score-radial .fill{fill:none;stroke:var(--matrix);stroke-width:8;stroke-linecap:round;stroke-dasharray:251;stroke-dashoffset:25;transition:stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 0 6px var(--matrix))}
+	  .score-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+	  .score-val{font-family:var(--font-mono);font-size:56px;line-height:1;color:var(--matrix);text-shadow:0 0 20px var(--matrix-glow)}
+	  .score-sub{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase}
+	  .score-status{font-family:var(--font-mono);font-size:11px;color:var(--matrix);border:1px solid var(--matrix);padding:6px 16px;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;border-radius:var(--radius-pill);background:rgba(0,255,65,.06)}
+	  .score-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin-bottom:16px;padding:0 4px}
+	  .score-stat{background:var(--surface-2);border:1px solid var(--border);padding:12px;border-radius:var(--radius-sm)}
+	  .score-stat-title{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+	  .score-stat-val{font-family:var(--font-mono);font-size:18px}
+	  .score-bars{width:100%;margin-bottom:16px}
+	  .score-bar-row{display:flex;align-items:center;padding:6px 0}
+	  .score-bar-label{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;width:110px;text-transform:uppercase}
+	  .score-bar-track{flex:1;height:6px;background:var(--track);border-radius:var(--radius-pill);overflow:hidden;margin:0 8px}
+	  .score-bar-fill{height:100%;border-radius:var(--radius-pill);filter:drop-shadow(0 0 3px currentColor)}
+	  .score-bar-val{font-family:var(--font-mono);font-size:11px;width:28px;text-align:right}
+	  .xp-gain{font-family:var(--font-mono);font-size:18px;color:var(--matrix);margin-bottom:12px;text-align:center;text-shadow:0 0 10px var(--matrix-glow-sm)}
+
+	  /* === Leaderboard === */
+	  .lboard-head{font-family:var(--font-mono);font-size:16px;text-align:center;margin-bottom:20px}
+	  .lboard-tabs{display:flex;gap:4px;padding:0 20px 20px}
+	  .lboard-tab{flex:1;padding:10px 4px;text-align:center;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;border-radius:var(--radius-pill);transition:all .25s ease}
+	  .lboard-tab:hover{background:var(--surface-3)}
+	  .lboard-tab.active{background:var(--matrix);color:var(--void);border-color:var(--matrix)}
+	  .lboard-row{display:flex;align-items:center;gap:12px;padding:14px 12px;border-bottom:1px solid var(--border)}
+	  .lboard-rank{font-family:var(--font-mono);font-size:16px;color:var(--text-dim);width:30px;text-align:center}
+	  .lboard-avatar{width:36px;height:36px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;color:var(--matrix);border-radius:var(--radius-sm);background:var(--surface-2)}
+	  .lboard-name{flex:1;font-size:13px}
+	  .lboard-score{font-family:var(--font-mono);font-size:14px;color:var(--matrix)}
+	  .lboard-row.me{background:rgba(0,255,65,.06);border-left:3px solid var(--matrix)}
+
+	  /* === Analytics === */
+	  .analytics-header{padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center}
+	  .analytics-tabs{display:flex;gap:4px;padding:0 20px 20px}
+	  .analytics-tab{flex:1;padding:10px 4px;text-align:center;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;border-radius:var(--radius-pill);transition:all .25s ease}
+	  .analytics-tab.active{color:var(--matrix);border-color:var(--matrix);background:rgba(0,255,65,.06)}
+	  .analytics-chart{background:var(--surface-2);margin:0 20px 16px;padding:20px;border:1px solid var(--border);height:160px;display:flex;align-items:flex-end;justify-content:space-around;gap:8px;border-radius:var(--radius-sm)}
+	  .chart-bar{width:24px;background:var(--matrix);opacity:.7;min-height:8px;transition:height .5s ease;border-radius:var(--radius-sm) var(--radius-sm) 0 0;filter:drop-shadow(0 0 4px var(--matrix))}
+	  .analytics-pro{position:absolute;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:80}
+	  .analytics-pro-icon{font-size:36px;margin-bottom:12px;color:var(--matrix)}
+	  .analytics-pro-text{font-family:var(--font-mono);font-size:12px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;text-align:center;line-height:1.8}
+
+	  /* === Badge Overlay === */
+	  .badge-overlay{position:absolute;inset:0;background:rgba(0,0,0,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200}
+	  .badge-star{font-size:72px;animation:badgePop .6s cubic-bezier(.34,1.56,.64,1) both;text-shadow:0 0 30px rgba(0,255,65,.4);margin-bottom:16px}
+	  .badge-name{font-family:var(--font-mono);font-size:20px;letter-spacing:2px;margin-bottom:6px}
+	  .badge-desc{font-size:12px;color:rgba(255,255,255,.7)}
+	  .badge-cta{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:2px;margin-top:24px;animation:pulse 2s infinite}
+	  @keyframes badgePop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:1}}
+	  @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+	  /* === Rank Up === */
+	  .rankup{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 32px;text-align:center;position:relative;z-index:1}
+	  .rankup-label{font-family:var(--font-mono);font-size:10px;letter-spacing:4px;color:var(--text-dim);text-transform:uppercase;margin-bottom:16px}
+	  .rankup-badge{width:140px;height:140px;border:3px solid var(--matrix);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:56px;color:var(--matrix);margin-bottom:20px;box-shadow:0 0 40px rgba(0,255,65,.25);border-radius:var(--radius-lg);background:rgba(0,255,65,.04)}
+	  .rankup-title{font-family:var(--font-mono);font-size:26px;letter-spacing:2px;margin-bottom:8px}
+	  .rankup-sub{font-size:13px;color:var(--text-dim);margin-bottom:32px}
+	  .rankup-perks{width:100%;text-align:left;margin-bottom:32px}
+	  .rankup-perk{font-family:var(--font-mono);font-size:11px;color:var(--matrix);padding:8px 0;border-bottom:1px solid var(--border)}
+	  .rankup-perk::before{content:'+ ';color:var(--matrix)}
+	</style>
+</head>
+<body>
+<div class="hud-bg"></div>
+<h1>TripRank — Design Preview</h1>
+<h2>Branches 00–06 · Cyberpunk HUD · JetBrains Mono · #00FF41</h2>
+
+<!-- =============== BRANCH 00 & 01: ONBOARDING =============== -->
+<div class="branch">
+  <div class="branch-title">Branch 01 — Onboarding</div>
+  <div class="branch-sub">Sign In · Username · Vehicle · Permissions · 3 slides</div>
+  <div class="showcase">
+
+    <!-- Onboarding Slide 1 -->
+    <div class="device-wrapper">
+      <span class="device-label">Slide 1 · Welcome</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="onboarding">
+          <div class="ob-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          </div>
+          <div class="ob-head">YOUR DRIVES,<br>RANKED.</div>
+          <div class="ob-body">Every trip you take gets a score. Build your rank. Climb from Learner to Legend.</div>
+          <div class="ob-dots"><span class="active"></span><span></span><span></span></div>
+          <button class="btn btn-matrix">GET STARTED</button>
+          <div class="ob-skip">Skip</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sign In -->
+    <div class="device-wrapper">
+      <span class="device-label">Sign In · Google</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen">
+          <div class="signin-top">
+            <div style="text-align:center">
+              <div class="signin-logo">TRIPRANK</div>
+              <div class="signin-sub">YOUR CAR HAS A SCORE</div>
+            </div>
+          </div>
+          <div class="signin-bottom">
+            <button class="btn btn-matrix" style="display:flex;align-items:center;justify-content:center;gap:12px">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              SIGN IN WITH GOOGLE
+            </button>
+            <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:24px;line-height:1.8">By continuing, you agree to our<br>Terms of Service · Privacy Policy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Onboarding Slide 2: How You Drive -->
+    <div class="device-wrapper">
+      <span class="device-label">Slide 2 · How You Drive</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="onboarding">
+          <div class="ob-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 3"/></svg>
+          </div>
+          <div class="ob-head">KNOW HOW<br>YOU DRIVE.</div>
+          <div class="ob-body">See every trip scored. Acceleration, braking, cornering, and more. All free forever.</div>
+          <div class="ob-dots"><span></span><span class="active"></span><span></span></div>
+          <button class="btn btn-matrix">NEXT</button>
+          <div class="ob-skip">Skip</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Username Picker -->
+    <div class="device-wrapper">
+      <span class="device-label">Username Picker</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen">
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;padding-top:8px">CLAIM YOUR NAME</div>
+          <div style="font-family:var(--font-mono);font-size:22px;margin-bottom:24px">Choose your driver tag</div>
+          <div style="border:1px solid var(--matrix);padding:14px 16px;margin-bottom:24px;display:flex;align-items:center;gap:12px">
+            <span style="font-family:var(--font-mono);font-size:18px;color:var(--white)">@</span>
+            <input type="text" value="speedster99" style="flex:1;background:transparent;border:none;outline:none;font-family:var(--font-mono);font-size:18px;color:var(--matrix)">
+          </div>
+          <div style="font-size:11px;color:var(--matrix);font-family:var(--font-mono);margin-bottom:16px">CHECKING AVAILABILITY...</div>
+          <div style="font-size:12px;color:var(--matrix);margin-bottom:24px">@speedster99 is available</div>
+          <button class="btn btn-matrix" style="margin-top:auto">CLAIM USERNAME</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vehicle Type -->
+    <div class="device-wrapper">
+      <span class="device-label">Vehicle Type</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen">
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;padding-top:8px">VEHICLE TYPE</div>
+          <div style="font-family:var(--font-mono);font-size:22px;margin-bottom:24px">What do you drive?</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+            <div style="border:1px solid var(--matrix);padding:14px 16px;display:flex;align-items:center;gap:12px;background:rgba(0,255,65,.05)">
+              <div style="font-size:24px">🚗</div><div><div style="font-family:var(--font-mono);font-size:14px">SEDAN / COUPE</div><div style="font-size:11px;color:var(--text-dim)">Most personal vehicles</div></div>
+            </div>
+            <div style="border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <div style="font-size:24px">🚕</div><div><div style="font-family:var(--font-mono);font-size:14px">RIDESHARE</div><div style="font-size:11px;color:var(--text-dim)">Uber / Lyft drivers</div></div>
+            </div>
+            <div style="border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <div style="font-size:24px">🛻</div><div><div style="font-family:var(--font-mono);font-size:14px">TRUCK / SUV</div><div style="font-size:11px;color:var(--text-dim)">Larger vehicles</div></div>
+            </div>
+          </div>
+          <button class="btn btn-ghost">SKIP FOR NOW</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =============== BRANCH 02: TRIP TRACKING (LIVE HUD) =============== -->
+<div class="branch">
+  <div class="branch-title">Branch 02 — Trip Tracking</div>
+  <div class="branch-sub">Live HUD · GPS tracking · Score in motion</div>
+  <div class="showcase">
+
+    <!-- Live HUD -->
+    <div class="device-wrapper">
+      <span class="device-label">Live HUD · Tracking</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen-dark">
+          <div class="hud-top">
+            <div>
+              <div class="hud-label">SPEED</div>
+              <div class="hud-speed">74 <span>km/h</span></div>
+            </div>
+            <div style="text-align:right">
+              <div class="hud-label">SCORE</div>
+              <div class="hud-score">88</div>
+            </div>
+          </div>
+          <div class="hud-map">
+            <div style="text-align:center">
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:8px">GPS TRACKING ACTIVE</div>
+              <div style="font-family:var(--font-mono);font-size:11px;color:var(--matrix)">● LIVE</div>
+            </div>
+          </div>
+          <div class="hud-metrics">
+            <div class="hud-metric">
+              <div class="hud-metric-top">
+                <span class="hud-label">DISTANCE</span>
+              </div>
+              <div class="hud-metric-val">12.4 <span style="font-size:12px;color:var(--text-dim)">km</span></div>
+            </div>
+            <div class="hud-metric">
+              <div class="hud-metric-top">
+                <span class="hud-label">TIME</span>
+              </div>
+              <div class="hud-metric-val">18:32</div>
+            </div>
+            <div class="hud-metric">
+              <div class="hud-metric-top">
+                <span class="hud-label">MAX G</span>
+              </div>
+              <div class="hud-metric-val" style="color:#FF6B00">0.42G</div>
+            </div>
+            <div class="hud-metric">
+              <div class="hud-metric-top">
+                <span class="hud-label">AVG SPEED</span>
+              </div>
+              <div class="hud-metric-val">58 <span style="font-size:12px;color:var(--text-dim)">km/h</span></div>
+            </div>
+          </div>
+          <button class="hud-btn">END TRIP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Permissions Screen -->
+    <div class="device-wrapper">
+      <span class="device-label">Permissions · GPS + BT</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen">
+          <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;padding-top:8px">SETUP</div>
+          <div style="font-family:var(--font-mono);font-size:22px;margin-bottom:32px">One last thing</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
+            <div style="border:1px solid var(--matrix);padding:16px;display:flex;align-items:center;gap:12px;background:rgba(0,255,65,.03)">
+              <div style="width:32px;height:32px;border:1px solid var(--matrix);display:flex;align-items:center;justify-content:center;font-size:16px">📍</div>
+              <div style="flex:1">
+                <div style="font-family:var(--font-mono);font-size:14px">Location</div>
+                <div style="font-size:11px;color:var(--text-dim)">Always required for trip tracking</div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--matrix)">ENABLED</div>
+            </div>
+            <div style="border:1px solid var(--border);padding:16px;display:flex;align-items:center;gap:12px">
+              <div style="width:32px;height:32px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px">📶</div>
+              <div style="flex:1">
+                <div style="font-family:var(--font-mono);font-size:14px">Nearby Devices</div>
+                <div style="font-size:11px;color:var(--text-dim)">Auto-start when car Bluetooth detected</div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">NOT NOW</div>
+            </div>
+            <div style="border:1px solid var(--border);padding:16px;display:flex;align-items:center;gap:12px">
+              <div style="width:32px;height:32px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px">🔔</div>
+              <div style="flex:1">
+                <div style="font-family:var(--font-mono);font-size:14px">Notifications</div>
+                <div style="font-size:11px;color:var(--text-dim)">Challenges, streaks, badges</div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--matrix)">ALLOW</div>
+            </div>
+          </div>
+          <button class="btn btn-matrix" style="margin-top:auto">CONTINUE</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =============== BRANCH 03: TRIP SUMMARY =============== -->
+<div class="branch">
+  <div class="branch-title">Branch 03 — Trip Summary</div>
+  <div class="branch-sub">Score Reveal · Category Bars · Share Card · Trip History</div>
+  <div class="showcase">
+
+    <!-- Trip End: Score Reveal -->
+    <div class="device-wrapper">
+      <span class="device-label">Trip End · Score 87</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen" style="align-items:center">
+          <div class="score-status">A — GREAT</div>
+          <div class="glow-center"></div>
+            <div class="score-radial">
+            <svg viewBox="0 0 80 80"><circle class="track" cx="40" cy="40" r="36"/><circle class="fill" cx="40" cy="40" r="36"/></svg>
+            <div class="score-text">
+              <div class="score-val">87</div>
+              <div class="score-sub">OVERALL</div>
+            </div>
+          </div>
+          <div class="xp-gain">+135 XP  ·  +24 km</div>
+          <div class="score-stats">
+            <div class="score-stat"><div class="score-stat-title">DISTANCE</div><div class="score-stat-val">24 km</div></div>
+            <div class="score-stat"><div class="score-stat-title">DURATION</div><div class="score-stat-val">37 min</div></div>
+            <div class="score-stat"><div class="score-stat-title">MAX SPEED</div><div class="score-stat-val">118 km/h</div></div>
+            <div class="score-stat"><div class="score-stat-title">AVG SPEED</div><div class="score-stat-val">62 km/h</div></div>
+          </div>
+          <div class="score-bars">
+            <div class="score-bar-row">
+              <div class="score-bar-label">ACCEL</div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width:78%;background:#FFD700"></div></div>
+              <div class="score-bar-val" style="color:#FFD700">78</div>
+            </div>
+            <div class="score-bar-row">
+              <div class="score-bar-label">BRAKE</div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width:85%;background:var(--matrix)"></div></div>
+              <div class="score-bar-val" style="color:var(--matrix)">85</div>
+            </div>
+            <div class="score-bar-row">
+              <div class="score-bar-label">CORNERING</div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width:88%;background:var(--matrix)"></div></div>
+              <div class="score-bar-val" style="color:var(--matrix)">88</div>
+            </div>
+            <div class="score-bar-row">
+              <div class="score-bar-label">SMOOTH</div>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width:91%;background:#39FF14"></div></div>
+              <div class="score-bar-val" style="color:#39FF14">91</div>
+            </div>
+          </div>
+          <button class="btn btn-matrix">SHARE</button>
+          <button class="btn btn-ghost">VIEW FULL ANALYSIS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trips List -->
+    <div class="device-wrapper">
+      <span class="device-label">Trip History · List</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen">
+          <div style="font-family:var(--font-mono);font-size:16px;margin-bottom:20px;padding-top:8px">TRIPS</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:var(--surface);border:1px solid var(--border);padding:14px;border-radius:0">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <div>
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:2px">JUN 25 · HOME → WORK</div>
+                  <div style="font-family:var(--font-mono);font-size:20px;color:var(--matrix)">91</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-family:var(--font-mono);font-size:18px">24 km</div>
+                  <div style="font-size:11px;color:var(--text-dim)">34 min</div>
+                </div>
+              </div>
+              <div style="height:3px;background:var(--track)"><div style="height:100%;width:91%;background:var(--matrix)"></div></div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);padding:14px;border-radius:0">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <div>
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:2px">JUN 24 · EVENING DRIVE</div>
+                  <div style="font-family:var(--font-mono);font-size:20px;color:#FFD700">78</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-family:var(--font-mono);font-size:18px">18 km</div>
+                  <div style="font-size:11px;color:var(--text-dim)">28 min</div>
+                </div>
+              </div>
+              <div style="height:3px;background:var(--track)"><div style="height:100%;width:78%;background:#FFD700"></div></div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);padding:14px;border-radius:0">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <div>
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-bottom:2px">JUN 22 · WEEKEND STRETCH</div>
+                  <div style="font-family:var(--font-mono);font-size:20px;color:var(--matrix)">95</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-family:var(--font-mono);font-size:18px">42 km</div>
+                  <div style="font-size:11px;color:var(--text-dim)">51 min</div>
+                </div>
+              </div>
+              <div style="height:3px;background:var(--track)"><div style="height:100%;width:95%;background:var(--matrix)"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="2"/></svg><span class="nav-label">TRACKING</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><polyline points="12,6 12,12 16,14"/></svg><span class="nav-label">HISTORY</span><span class="nav-dot"></span></button><button class="active"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2"/><path d="M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2"/><path d="M6 3h12v7a6 6 0 01-12 0z"/><path d="M12 16v5"/><path d="M8 21h8"/></svg><span class="nav-label">RANK</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="nav-label">PROFILE</span><span class="nav-dot"></span></button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =============== BRANCH 04: GAMIFICATION =============== -->
+<div class="branch">
+  <div class="branch-title">Branch 04 — Gamification</div>
+  <div class="branch-sub">Home · Ranks · Streaks · Challenges · Badge + Rank Up</div>
+  <div class="showcase">
+
+    <!-- Home Dashboard -->
+    <div class="device-wrapper">
+      <span class="device-label">Home Dashboard</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen-nav">
+          <div class="home-header">
+            <div><div class="home-greet">GOOD MORNING, <strong>SPEEDY</strong></div></div>
+            <div class="home-avatar">@</div>
+          </div>
+          <div class="home-rank-card">
+            <div class="home-rank-top">
+              <div>
+                <div class="home-rank-title">CRUISER</div>
+                <div style="font-size:11px;color:var(--text-dim)">2,450 XP · Rank 3 of 7</div>
+              </div>
+              <div class="home-rank-badge">LEVEL 12</div>
+            </div>
+            <div class="home-progress"><div class="home-progress-fill"></div></div>
+            <div class="home-progress-label">550 XP to ENFORCER →</div>
+          </div>
+          <div class="home-stats">
+            <div class="home-stat"><div class="home-stat-label">THIS WEEK</div><div class="home-stat-val">187 km</div></div>
+            <div class="home-stat"><div class="home-stat-label">TRIPS</div><div class="home-stat-val">14</div></div>
+            <div class="home-stat"><div class="home-stat-label">AVG SCORE</div><div class="home-stat-val" style="color:var(--matrix)">84</div></div>
+            <div class="home-stat"><div class="home-stat-label">STREAK</div><div class="home-stat-val">11 🔥</div></div>
+          </div>
+          <div class="home-challenges">
+            <div class="home-ch-head">WEEKLY CHALLENGES</div>
+            <div class="home-ch-item">
+              <div class="home-ch-top">
+                <div class="home-ch-name">Smooth Operator</div>
+                <div class="home-ch-reward">+150 XP</div>
+              </div>
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">50 km with 0 harsh braking</div>
+              <div class="home-ch-bar"><div class="home-ch-bar-fill"></div></div>
+            </div>
+            <div class="home-ch-item">
+              <div class="home-ch-top">
+                <div class="home-ch-name">Early Bird Bonus</div>
+                <div class="home-ch-reward">+50 XP</div>
+              </div>
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">Drive before 8am · 1/3 complete</div>
+              <div class="home-ch-bar"><div style="height:4px;background:var(--track)"><div style="height:100%;width:33%;background:#FFD700"></div></div></div>
+            </div>
+          </div>
+          <div style="padding:8px 4px 80px">
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">LAST TRIP · JUN 25</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-family:var(--font-mono);font-size:22px;color:var(--matrix)">91</div><div style="font-size:11px;color:var(--text-dim)">24 km · 34 min</div></div>
+              <button class="btn btn-matrix" style="width:auto;padding:12px 20px;font-size:10px;margin:0">TRACK NEW</button>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <button class="active"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="2"/></svg><span class="nav-label">TRACK</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><polyline points="12,6 12,12 16,14"/></svg><span class="nav-label">HISTORY</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2"/><path d="M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2"/><path d="M6 3h12v7a6 6 0 01-12 0z"/><path d="M12 16v5"/><path d="M8 21h8"/></svg><span class="nav-label">RANK</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="nav-label">PROFILE</span><span class="nav-dot"></span></button>
+        </div>
+        <div class="home-fab">▶</div>
+      </div>
+    </div>
+
+    <!-- Rank Up Screen -->
+    <div class="device-wrapper">
+      <span class="device-label">Rank Up · Enforcer</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="rankup">
+          <div class="rankup-label">NEW RANK UNLOCKED</div>
+          <div class="glow-center"></div>
+            <div class="rankup-badge">E</div>
+          <div class="rankup-title">ENFORCER</div>
+          <div class="rankup-sub">Rank 4 of 7 · Your driving speaks for itself</div>
+          <div class="rankup-perks">
+            <div class="rankup-perk">Unlocked G-Force Analytics</div>
+            <div class="rankup-perk">Priority in Leaderboards</div>
+            <div class="rankup-perk">+500 XP Bonus</div>
+          </div>
+          <button class="btn btn-matrix">CONTINUE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badge Earned -->
+    <div class="device-wrapper">
+      <span class="device-label">Badge Earned</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen-dark">
+          <div class="badge-overlay">
+            <div class="badge-star" style="font-size:64px;margin-bottom:16px">★</div>
+            <div class="badge-name">SMOOTH OPERATOR</div>
+            <div class="badge-desc">Completed 5 km with zero harsh braking events</div>
+            <div class="xp-gain" style="margin:16px 0 0">+150 XP Earned</div>
+            <div class="badge-cta">TAP TO CONTINUE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranks Screen -->
+    <div class="device-wrapper">
+      <span class="device-label">Ranks Ladder</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen-nav">
+          <div style="font-family:var(--font-mono);font-size:16px;margin-bottom:20px;padding-top:8px">RANKS</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:20px">
+            <div style="padding:12px 16px;border-left:3px solid #39FF14;background:rgba(57,255,20,.05)">
+              <div style="font-family:var(--font-mono);font-size:16px">NITRO</div>
+              <div style="font-size:11px;color:var(--text-dim)">25,000 XP · Top 1%</div>
+            </div>
+            <div style="padding:12px 16px;border-left:3px solid var(--matrix)">
+              <div style="font-family:var(--font-mono);font-size:16px">ENFORCER</div>
+              <div style="font-size:11px;color:var(--text-dim)">10,000 XP · Top 5%</div>
+            </div>
+            <div style="padding:12px 16px;border-left:3px solid var(--matrix-dim)">
+              <div style="font-family:var(--font-mono);font-size:16px;opacity:.6">CRUISER</div>
+              <div style="font-size:11px;color:var(--text-dim);opacity:.6">3,000 XP</div>
+            </div>
+            <div style="padding:12px 16px;border-left:3px solid #888;opacity:.4">
+              <div style="font-family:var(--font-mono);font-size:16px">REBEL</div>
+              <div style="font-size:11px;color:var(--text-dim)">1,000 XP</div>
+            </div>
+            <div style="padding:12px 16px;border-left:3px solid #888;opacity:.3">
+              <div style="font-family:var(--font-mono);font-size:16px">DRIFTER</div>
+              <div style="font-size:11px;color:var(--text-dim)">300 XP</div>
+            </div>
+            <div style="padding:12px 16px;border-left:3px solid #888;opacity:.25">
+              <div style="font-family:var(--font-mono);font-size:16px">STARTER</div>
+              <div style="font-size:11px;color:var(--text-dim)">0 XP</div>
+            </div>
+            <div style="padding:12px 16px;border-left:3px solid #888;opacity:.2">
+              <div style="font-family:var(--font-mono);font-size:16px">LEARNER</div>
+              <div style="font-size:11px;color:var(--text-dim)">Just starting</div>
+            </div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">MY BADGES · 6/24</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <div style="aspect-ratio:1;border:1px solid var(--matrix);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:20px">★</div>
+            <div style="aspect-ratio:1;border:1px solid var(--matrix);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:20px">⚡</div>
+            <div style="aspect-ratio:1;border:1px solid var(--matrix-dim);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:20px;opacity:.5">🏆</div>
+            <div style="aspect-ratio:1;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:14px;color:var(--text-faint)">?</div>
+            <div style="aspect-ratio:1;border:1px solid var(--matrix-dim);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:20px;opacity:.5">🔥</div>
+            <div style="aspect-ratio:1;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:14px;color:var(--text-faint)">?</div>
+            <div style="aspect-ratio:1;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:14px;color:var(--text-faint)">?</div>
+            <div style="aspect-ratio:1;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:14px;color:var(--text-faint)">?</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =============== BRANCH 05: SOCIAL =============== -->
+<div class="branch">
+  <div class="branch-title">Branch 05 — Social</div>
+  <div class="branch-sub">Leaderboard · Public Profile · Challenge Friend · Deep Links</div>
+  <div class="showcase">
+
+    <!-- Leaderboard -->
+    <div class="device-wrapper">
+      <span class="device-label">Global Leaderboard</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen-nav">
+          <div class="lboard-head">LEADERBOARD</div>
+          <div class="lboard-tabs">
+            <div class="lboard-tab active">GLOBAL</div>
+            <div class="lboard-tab" style="opacity:.5">FRIENDS [PRO]</div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">THIS WEEK · TOP 100</div>
+          <div class="lboard-row" style="background:rgba(255,215,0,.1);border-bottom-color:rgba(255,215,0,.3)">
+            <div class="lboard-rank" style="color:#FFD700;font-size:22px">2</div>
+            <div class="lboard-avatar">🚗</div>
+            <div class="lboard-name">nitro_rider99<br><span style="font-size:11px;color:var(--text-dim)">GTI_Mk7</span></div>
+            <div class="lboard-score">98</div>
+          </div>
+          <div class="lboard-row me">
+            <div class="lboard-rank" style="color:var(--matrix)">8</div>
+            <div class="lboard-avatar" style="border-color:var(--matrix)">@</div>
+            <div class="lboard-name">speedster99<br><span style="font-size:11px;color:var(--text-dim)">BMW M240i</span></div>
+            <div class="lboard-score" style="color:var(--matrix)">91</div>
+          </div>
+          <div class="lboard-row">
+            <div class="lboard-rank">42</div>
+            <div class="lboard-avatar">🏎️</div>
+            <div class="lboard-name">drift_king<br><span style="font-size:11px;color:var(--text-dim)">Supra MK4</span></div>
+            <div class="lboard-score">87</div>
+          </div>
+          <div class="lboard-row">
+            <div class="lboard-rank">103</div>
+            <div class="lboard-avatar">🚙</div>
+            <div class="lboard-name">smooth_driver<br><span style="font-size:11px;color:var(--text-dim)">Mazda3</span></div>
+            <div class="lboard-score">84</div>
+          </div>
+          <div class="lboard-row">
+            <div class="lboard-rank">218</div>
+            <div class="lboard-avatar">⚡</div>
+            <div class="lboard-name">eco_pilot<br><span style="font-size:11px;color:var(--text-dim)">Tesla Model 3</span></div>
+            <div class="lboard-score">82</div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <button>Track</button><button>History</button><button class="active">Rank</button><button>Profile</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Public Profile -->
+    <div class="device-wrapper">
+      <span class="device-label">Public Profile</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen-nav">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-top:8px">
+            <div style="width:60px;height:60px;border:2px solid var(--matrix);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:24px;color:var(--matrix)">@</div>
+            <div>
+              <div style="font-family:var(--font-mono);font-size:20px;color:var(--matrix)">nitro_rider99</div>
+              <div style="font-size:12px;color:var(--text-dim)">Enforcer · Rank 4 of 7</div>
+              <div style="font-size:11px;color:var(--text-dim)">GTI Mk7 · 847 trips</div>
+            </div>
+          </div>
+          <div class="home-stats" style="padding:0 0 16px">
+            <div class="home-stat"><div class="home-stat-label">ALL-TIME</div><div class="home-stat-val" style="font-size:18px">4,842</div></div>
+            <div class="home-stat"><div class="home-stat-label">AVG SCORE</div><div class="home-stat-val" style="font-size:18px;color:var(--matrix)">89</div></div>
+            <div class="home-stat"><div class="home-stat-label">TRIPS</div><div class="home-stat-val" style="font-size:18px">847</div></div>
+            <div class="home-stat"><div class="home-stat-label">BEST</div><div class="home-stat-val" style="font-size:18px;color:var(--matrix)">98</div></div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">RECENT BADGES</div>
+          <div style="display:flex;gap:8px;margin-bottom:20px">
+            <div style="width:44px;height:44px;border:1px solid var(--matrix);display:flex;align-items:center;justify-content:center;font-size:22px">★</div>
+            <div style="width:44px;height:44px;border:1px solid var(--matrix);display:flex;align-items:center;justify-content:center;font-size:22px">⚡</div>
+            <div style="width:44px;height:44px;border:1px solid var(--matrix-dim);display:flex;align-items:center;justify-content:center;font-size:22px;opacity:.5">🏆</div>
+          </div>
+          <button class="btn btn-matrix" style="margin-bottom:8px">CHALLENGE</button>
+        </div>
+        <div class="bottom-nav">
+          <button>Track</button><button>History</button><button class="active">Rank</button><button>Profile</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =============== BRANCH 06: PRO FEATURES =============== -->
+<div class="branch">
+  <div class="branch-title">Branch 06 — Pro Features</div>
+  <div class="branch-sub">Route Replay · G-Force · Analytics · Gated for Free Users</div>
+  <div class="showcase">
+
+    <!-- Analytics (Pro Gated) -->
+    <div class="device-wrapper">
+      <span class="device-label">Analytics [PRO GATED]</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen-nav">
+          <div class="analytics-header">
+            <div style="font-family:var(--font-mono);font-size:14px">ANALYTICS</div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);border:1px solid var(--matrix);padding:4px 10px">PRO</div>
+          </div>
+          <div class="analytics-tabs">
+            <div class="analytics-tab" style="opacity:.5">SCORES [PRO]</div>
+            <div class="analytics-tab" style="opacity:.5">DISTANCE [PRO]</div>
+            <div class="analytics-tab active">SCORES</div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;padding:0 20px">WEEKLY TREND</div>
+          <div class="analytics-chart">
+            <div class="chart-bar" style="height:60%"></div>
+            <div class="chart-bar" style="height:80%"></div>
+            <div class="chart-bar" style="height:45%;opacity:.4"></div>
+            <div class="chart-bar" style="height:90%"></div>
+            <div class="chart-bar" style="height:70%;opacity:.4"></div>
+            <div class="chart-bar" style="height:95%;opacity:.4"></div>
+            <div class="chart-bar" style="height:85%"></div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;padding:16px 20px 0">SCORE CATEGORIES</div>
+          <div style="padding:0 20px">
+            <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px">Acceleration</span><span style="font-family:var(--font-mono);color:var(--matrix)">84</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px">Braking</span><span style="font-family:var(--font-mono);color:#FFD700">79</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px">Cornering</span><span style="font-family:var(--font-mono);color:var(--matrix)">88</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:12px 0">
+              <span style="font-size:13px">Smoothness</span><span style="font-family:var(--font-mono);color:#39FF14">91</span>
+            </div>
+          </div>
+        </div>
+        <div class="analytics-pro">
+          <div class="analytics-pro-icon">◆</div>
+          <div class="analytics-pro-text">FULL ANALYTICS<br>REQUIRES PRO</div>
+          <button class="btn btn-matrix" style="width:auto;padding:12px 24px;margin-top:20px;font-size:10px">UNLOCK PRO · $3.99/mo</button>
+        </div>
+        <div class="bottom-nav">
+          <button>Track</button><button>History</button><button class="active">Rank</button><button>Profile</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- G-Force Visualizer (Pro) -->
+    <div class="device-wrapper">
+      <span class="device-label">G-Force Radar [PRO]</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen">
+          <div style="font-family:var(--font-mono);font-size:14px;margin-bottom:20px;padding-top:8px">G-FORCE</div>
+          <div style="display:flex;justify-content:center;margin-bottom:20px">
+            <svg viewBox="0 0 200 200" width="180" height="180">
+              <polygon points="100,10 190,100 100,190 10,100" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+              <polygon points="100,30 170,100 100,170 30,100" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+              <polygon points="100,50 150,100 100,150 50,100" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+              <polygon points="100,70 130,100 100,130 70,100" fill="rgba(0,255,65,.08)" stroke="var(--matrix)" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div style="padding:0 4px">
+            <div style="display:flex;justify-content:space-between;padding:12px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px">
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">MAX LATERAL</span>
+              <span style="font-family:var(--font-mono);font-size:18px;color:#FF6B00">0.48G</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:12px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px">
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">MAX LONGITUD</span>
+              <span style="font-family:var(--font-mono);font-size:18px;color:#FFD700">0.31G</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:12px;background:var(--surface);border:1px solid var(--border)">
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">SAFE ZONE</span>
+              <span style="font-family:var(--font-mono);font-size:18px;color:var(--matrix)">94%</span>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav"><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="2"/></svg><span class="nav-label">TRACK</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><polyline points="12,6 12,12 16,14"/></svg><span class="nav-label">HISTORY</span><span class="nav-dot"></span></button><button class="active"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2"/><path d="M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2"/><path d="M6 3h12v7a6 6 0 01-12 0z"/><path d="M12 16v5"/><path d="M8 21h8"/></svg><span class="nav-label">RANK</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="nav-label">PROFILE</span><span class="nav-dot"></span></button></div>
+      </div>
+    </div>
+
+    <!-- Route Replay (Pro) -->
+    <div class="device-wrapper">
+      <span class="device-label">Route Replay [PRO]</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen-dark" style="padding:0">
+          <div style="flex:1;background:var(--surface-2);position:relative;margin-bottom:0">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div style="text-align:center">
+                <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px">ROUTE MAP</div>
+                <div style="font-family:var(--font-mono);font-size:11px;color:var(--matrix)">24 km · 3:32 play time</div>
+              </div>
+            </div>
+            <div style="position:absolute;top:16px;left:16px;font-family:var(--font-mono);font-size:10px;border:1px solid var(--matrix);padding:4px 10px;color:var(--matrix)">PRO</div>
+          </div>
+          <div style="padding:16px">
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <button style="flex:1;padding:12px;background:var(--matrix);color:var(--void);border:none;font-family:var(--font-mono);font-size:12px;cursor:pointer">▶ PLAY</button>
+              <button style="flex:1;padding:12px;background:var(--surface);color:var(--text-dim);border:1px solid var(--border);font-family:var(--font-mono);font-size:12px;cursor:pointer">⏸ PAUSE</button>
+            </div>
+            <div style="height:4px;background:var(--track);margin-bottom:8px;position:relative">
+              <div style="height:100%;width:35%;background:var(--matrix)"></div>
+              <div style="position:absolute;left:35%;top:-4px;width:2px;height:12px;background:var(--matrix)"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">
+              <span>3:32</span><span>10:17</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
+              <div style="text-align:center"><div style="font-family:var(--font-mono);font-size:16px;color:var(--matrix)">91</div><div style="font-size:9px;color:var(--text-dim)">SCORE</div></div>
+              <div style="text-align:center"><div style="font-family:var(--font-mono);font-size:16px">118</div><div style="font-size:9px;color:var(--text-dim)">MAX KM/H</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav"><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="2"/></svg><span class="nav-label">TRACK</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><polyline points="12,6 12,12 16,14"/></svg><span class="nav-label">HISTORY</span><span class="nav-dot"></span></button><button class="active"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2"/><path d="M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2"/><path d="M6 3h12v7a6 6 0 01-12 0z"/><path d="M12 16v5"/><path d="M8 21h8"/></svg><span class="nav-label">RANK</span><span class="nav-dot"></span></button><button><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="nav-label">PROFILE</span><span class="nav-dot"></span></button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- =============== BRANCH 07: MONETIZATION =============== -->
+<div class="branch">
+  <div class="branch-title">Branch 07 — Monetization</div>
+  <div class="branch-sub">Paywall · Pro Upsell · Pro Activated</div>
+  <div class="showcase">
+
+    <!-- Paywall Screen -->
+    <div class="device-wrapper">
+      <span class="device-label">Paywall · Pro Upgrade</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen" style="padding:20px">
+          <!-- Dismiss -->
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+            <span style="font-family:var(--font-mono);font-size:16px;color:var(--text-dim);cursor:pointer">✕</span>
+          </div>
+          <!-- Hero -->
+          <div style="text-align:center;margin-bottom:24px">
+            <div class="glow-center"></div>
+            <div style="font-family:var(--font-display);font-size:28px;color:var(--matrix);letter-spacing:4px;margin-bottom:60px;padding-top:50px">PRO</div>
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">UNLOCK YOUR FULL POTENTIAL</div>
+          </div>
+          <!-- Feature list -->
+          <div style="margin-bottom:20px;flex:1">
+            <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center">
+              <span style="color:var(--matrix);font-size:10px">◇</span><span style="font-size:12px">Unlimited trip history</span>
+            </div>
+            <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center">
+              <span style="color:var(--matrix);font-size:10px">◇</span><span style="font-size:12px">Route replay with score overlay</span>
+            </div>
+            <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center">
+              <span style="color:var(--matrix);font-size:10px">◇</span><span style="font-size:12px">G-force visualizer</span>
+            </div>
+            <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center">
+              <span style="color:var(--matrix);font-size:10px">◇</span><span style="font-size:12px">Advanced analytics & trends</span>
+            </div>
+            <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center">
+              <span style="color:var(--matrix);font-size:10px">◇</span><span style="font-size:12px">Friends leaderboard</span>
+            </div>
+            <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center">
+              <span style="color:var(--matrix);font-size:10px">◇</span><span style="font-size:12px">Home screen widget</span>
+            </div>
+            <div style="display:flex;gap:12px;padding:8px 0;align-items:center">
+              <span style="color:var(--matrix);font-size:10px">◇</span><span style="font-size:12px">CSV data export</span>
+            </div>
+          </div>
+          <!-- Pricing toggle -->
+          <div style="display:flex;background:var(--surface-2);border-radius:var(--radius-pill);padding:4px;margin-bottom:16px;border:1px solid var(--border)">
+            <div style="flex:1;text-align:center;padding:10px;border-radius:var(--radius-pill);font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:1px">MONTHLY<br><span style="font-size:11px;color:var(--white)">$3.99</span></div>
+            <div style="flex:1;text-align:center;padding:10px;border-radius:var(--radius-pill);font-family:var(--font-mono);font-size:10px;letter-spacing:1px;background:var(--matrix);color:var(--void)">ANNUAL<br><span style="font-size:11px">$24.99</span></div>
+          </div>
+          <div style="text-align:center;font-size:10px;color:var(--amber);font-family:var(--font-mono);margin-bottom:12px">SAVE 48%</div>
+          <!-- Trial banner -->
+          <div style="background:rgba(0,255,65,.08);border:1px solid var(--matrix);border-radius:var(--radius-pill);padding:8px 16px;font-size:10px;color:var(--matrix);text-align:center;margin-bottom:16px">✓ 7-day free trial included — cancel anytime</div>
+          <!-- CTA -->
+          <button class="btn btn-matrix" style="font-size:13px;padding:16px">START FREE TRIAL</button>
+          <!-- Restore -->
+          <div style="text-align:center;font-size:9px;color:var(--text-faint);margin-top:12px;cursor:pointer">Restore purchases</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pro Upsell Banner -->
+    <div class="device-wrapper">
+      <span class="device-label">Pro Upsell · Inline Gate</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen" style="padding:24px;justify-content:center">
+          <!-- Simulated blurred feature behind -->
+          <div style="opacity:.2;filter:blur(2px);position:absolute;inset:24px;display:flex;flex-direction:column;gap:12px;pointer-events:none">
+            <div style="height:40px;background:var(--surface-2);border-radius:var(--radius-sm)"></div>
+            <div style="height:80px;background:var(--surface-2);border-radius:var(--radius-sm)"></div>
+            <div style="height:40px;background:var(--surface-2);border-radius:var(--radius-sm)"></div>
+            <div style="height:40px;background:var(--surface-2);border-radius:var(--radius-sm)"></div>
+          </div>
+          <!-- Lock overlay -->
+          <div style="background:rgba(0,0,0,.85);border-radius:var(--radius);padding:32px;text-align:center;border:1px solid var(--border);position:relative;z-index:2">
+            <div style="font-size:32px;color:var(--matrix);margin-bottom:12px">🔒</div>
+            <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">PRO FEATURE</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.5">See all your trips, not just the last 10</div>
+            <button class="btn btn-matrix" style="font-size:10px;padding:12px">UNLOCK PRO →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pro Activated -->
+    <div class="device-wrapper">
+      <span class="device-label">Pro Activated</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px">
+          <div class="glow-center"></div>
+          <div style="font-family:var(--font-display);font-size:14px;color:var(--matrix);letter-spacing:6px;margin-bottom:16px;text-transform:uppercase">PRO ACTIVATED</div>
+          <div style="width:100px;height:100px;border:3px solid var(--matrix);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:48px;color:var(--matrix);margin-bottom:24px;box-shadow:0 0 40px var(--matrix-glow);background:rgba(0,255,65,.04)">P</div>
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;color:var(--matrix);text-transform:uppercase">LEGEND</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:8px">All features unlocked. Drive well.</div>
+          <div style="font-size:9px;color:var(--text-faint);margin-top:40px;animation:pulse 2s infinite">AUTO-DISMISSING...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- =============== BRANCH 09: POLISH =============== -->
+<div class="branch">
+  <div class="branch-title">Branch 09 — Polish</div>
+  <div class="branch-sub">Empty States · Loading Skeletons · Error States</div>
+  <div class="showcase">
+
+    <!-- Empty State: No Trips -->
+    <div class="device-wrapper">
+      <span class="device-label">Empty · No Trips</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen" style="align-items:center;justify-content:center;text-align:center">
+          <div style="font-size:48px;color:var(--matrix-muted);margin-bottom:16px">◉</div>
+          <div style="font-family:var(--font-mono);font-size:16px;letter-spacing:2px;margin-bottom:8px">NO TRIPS YET</div>
+          <div style="font-size:12px;color:var(--text-dim);max-width:240px;margin-bottom:32px;line-height:1.6">Take your first drive to get your score.</div>
+          <button class="btn btn-matrix">START TRACKING</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State: No Badges -->
+    <div class="device-wrapper">
+      <span class="device-label">Empty · No Badges</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen" style="align-items:center;justify-content:center;text-align:center">
+          <div style="font-size:48px;color:var(--matrix-muted);margin-bottom:16px">◇</div>
+          <div style="font-family:var(--font-mono);font-size:16px;letter-spacing:2px;margin-bottom:8px">NO BADGES YET</div>
+          <div style="font-size:12px;color:var(--text-dim);max-width:240px;margin-bottom:32px;line-height:1.6">Complete trips to earn your first badge.</div>
+          <button class="btn btn-outline">SEE ALL TRIPS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Skeletons -->
+    <div class="device-wrapper">
+      <span class="device-label">Loading · Skeletons</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen" style="gap:0">
+          <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;color:var(--text-dim)">LOADING...</div>
+          <!-- Skeleton rows -->
+          <div style="display:flex;gap:12px;margin-bottom:20px">
+            <div style="width:36px;height:36px;background:var(--track);border-radius:var(--radius-sm);animation:pulse 1.5s infinite"></div>
+            <div style="flex:1">
+              <div style="height:12px;width:60%;background:var(--track);border-radius:var(--radius-pill);margin-bottom:8px"></div>
+              <div style="height:10px;width:40%;background:var(--track);border-radius:var(--radius-pill)"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-bottom:20px">
+            <div style="width:36px;height:36px;background:var(--track);border-radius:var(--radius-sm);animation:pulse 1.5s infinite 0.2s"></div>
+            <div style="flex:1">
+              <div style="height:12px;width:50%;background:var(--track);border-radius:var(--radius-pill);margin-bottom:8px"></div>
+              <div style="height:10px;width:35%;background:var(--track);border-radius:var(--radius-pill)"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-bottom:20px">
+            <div style="width:36px;height:36px;background:var(--track);border-radius:var(--radius-sm);animation:pulse 1.5s infinite 0.4s"></div>
+            <div style="flex:1">
+              <div style="height:12px;width:55%;background:var(--track);border-radius:var(--radius-pill);margin-bottom:8px"></div>
+              <div style="height:10px;width:45%;background:var(--track);border-radius:var(--radius-pill)"></div>
+            </div>
+          </div>
+          <div style="height:120px;background:var(--track);border-radius:var(--radius-sm);margin-bottom:20px;animation:pulse 1.5s infinite 0.6s"></div>
+          <div style="height:40px;width:100%;background:var(--track);border-radius:var(--radius-pill);animation:pulse 1.5s infinite 0.8s"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div class="device-wrapper">
+      <span class="device-label">Error State</span>
+      <div class="phone">
+        <div class="scanlines"></div>
+        <div class="screen" style="align-items:center;justify-content:center;text-align:center">
+          <div style="font-size:48px;color:var(--orange);margin-bottom:16px">⚠</div>
+          <div style="font-family:var(--font-mono);font-size:16px;letter-spacing:2px;margin-bottom:8px">COULDN'T LOAD</div>
+          <div style="font-size:12px;color:var(--text-dim);max-width:240px;margin-bottom:32px;line-height:1.6">Check your connection and try again.</div>
+          <button class="btn btn-matrix">RETRY</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="padding:40px 20px;text-align:center">
+  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);letter-spacing:2px">ALL SCREENS · BRANCHES 01–09 · JUNE 2026</div>
+</div>
+
+</body>
+</html>

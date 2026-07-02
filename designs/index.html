@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RevRank — Design Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000000;
+      --surface: #0A0A0A;
+      --card: #121212;
+      --green: #00FF41;
+      --green-dim: #00B4D8;
+      --text-primary: #FFFFFF;
+      --text-secondary: #888888;
+      --text-muted: #555555;
+      --border: #1A1A1A;
+      --radius-sm: 8px;
+      --radius-pill: 999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Rajdhani', sans-serif;
+      min-height: 100vh;
+      padding: 40px 20px;
+      position: relative;
+    }
+
+    /* HUD Scanlines */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 255, 65, 0.015) 0px,
+        transparent 1px,
+        transparent 2px
+      );
+      z-index: 9999;
+    }
+
+    /* Mesh grid background */
+    .hud-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 50% 30%, rgba(0, 255, 65, 0.04) 0%, transparent 60%),
+        linear-gradient(rgba(0, 255, 65, 0.01) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 65, 0.01) 1px, transparent 1px);
+      background-size: 100% 100%, 40px 40px, 40px 40px;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--green);
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+    }
+
+    .subtitle {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px;
+      color: var(--text-secondary);
+      letter-spacing: 6px;
+      text-transform: uppercase;
+    }
+
+    .screen-count {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 6px 16px;
+      border: 1px solid var(--green);
+      border-radius: var(--radius-pill);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--green);
+      letter-spacing: 2px;
+    }
+
+    .branch-section {
+      margin-bottom: 48px;
+    }
+
+    .branch-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .branch-number {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      color: var(--green);
+      background: rgba(0, 255, 65, 0.08);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      min-width: 80px;
+      text-align: center;
+      border: 1px solid rgba(0, 255, 65, 0.2);
+    }
+
+    .branch-name {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 1px;
+    }
+
+    .screen-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .screen-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      text-decoration: none;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen-link::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--green);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .screen-link:hover {
+      border-color: rgba(0, 255, 65, 0.3);
+      background: #1A1A1A;
+    }
+
+    .screen-link:hover::before {
+      opacity: 1;
+    }
+
+    .screen-link .screen-name {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .screen-link .screen-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .screen-link .screen-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .screen-tag.pro {
+      background: rgba(0, 255, 65, 0.1);
+      color: var(--green);
+      border: 1px solid rgba(0, 255, 65, 0.2);
+    }
+
+    .screen-tag.new {
+      background: rgba(255, 215, 0, 0.1);
+      color: #FFD700;
+      border: 1px solid rgba(255, 215, 0, 0.2);
+    }
+
+    .arrow {
+      color: var(--text-muted);
+      font-size: 18px;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .screen-link:hover .arrow {
+      transform: translateX(4px);
+      color: var(--green);
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+    }
+
+    footer p {
+      color: var(--text-muted);
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+
+    footer .footer-brand {
+      font(id): '';  }
+      color: var(--green);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud-bg"></div>
+  <div class="container">
+    <header>
+      <div class="logo">RevRank</div>
+      <div class="subtitle">Design Preview</div>
+      <div class="screen-count">24 SCREENS</div>
+    </header>
+
+    <!-- Branch 00 -->
+    <section class="branch-section">
+      <div class="branch-header">
+        <span class="branch-number">B00</span>
+        <span class="branch-name">Foundation</span>
+      </div>
+      <div class="screen-grid">
+        <a href="b00-slide-1-welcome.html" class="screen-link">
+          <span class="screen-name">Welcome Slide</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b00-slide-2-how-you-drive.html" class="screen-link">
+          <span class="screen-name">How You Drive Slide</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b00-sign-in-google.html" class="screen-link">
+          <span class="screen-name">Google Sign-In</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b00-username-picker.html" class="screen-link">
+          <span class="screen-name">Username Picker</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b00-vehicle-type.html" class="screen-link">
+          <span class="screen-name">Vehicle Type</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Branch 02 -->
+    <section class="branch-section">
+      <div class="branch-header">
+        <span class="branch-number">B02</span>
+        <span class="branch-name">Trip Tracking</span>
+      </div>
+      <div class="screen-grid">
+        <a href="b02-permissions-gps-bt.html" class="screen-link">
+          <span class="screen-name">Permissions (GPS + Bluetooth)</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b02-live-hud-tracking.html" class="screen-link">
+          <span class="screen-name">Live HUD Tracking</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Branch 03 -->
+    <section class="branch-section">
+      <div class="branch-header">
+        <span class="branch-number">B03</span>
+        <span class="branch-name">Trip Summary</span>
+      </div>
+      <div class="screen-grid">
+        <a href="b03-trip-end-score-87.html" class="screen-link">
+          <span class="screen-name">Trip End Score (87)</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b03-trip-history-list.html" class="screen-link">
+          <span class="screen-name">Trip History List</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Branch 04 -->
+    <section class="branch-section">
+      <div class="branch-header">
+        <span class="branch-number">B04</span>
+        <span class="branch-name">Gamification</span>
+      </div>
+      <div class="screen-grid">
+        <a href="b04-home-dashboard.html" class="screen-link">
+          <span class="screen-name">Home Dashboard</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b04-ranks-ladder.html" class="screen-link">
+          <span class="screen-name">Ranks Ladder</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b04-rank-up-enforcer.html" class="screen-link">
+          <span class="screen-name">Rank Up (Enforcer)</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b04-badge-earned.html" class="screen-link">
+          <span class="screen-name">Badge Earned</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Branch 05 -->
+    <section class="branch-section">
+      <div class="branch-header">
+        <span class="branch-number">B05</span>
+        <span class="branch-name">Social</span>
+      </div>
+      <div class="screen-grid">
+        <a href="b05-global-leaderboard.html" class="screen-link">
+          <span class="screen-name">Global Leaderboard</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b05-public-profile.html" class="screen-link">
+          <span class="screen-name">Public Profile</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Branch 06 -->
+    <section class="branch-section">
+      <div class="branch-header">
+        <span class="branch-number">B06</span>
+        <span class="branch-name">Pro Features</span>
+      </div>
+      <div class="screen-grid">
+        <a href="b06-route-replay-pro.html" class="screen-link">
+          <span class="screen-name">Route Replay</span>
+          <span class="screen-meta">
+            <span class="screen-tag pro">PRO</span>
+            <span class="arrow">→</span>
+          </span>
+        </a>
+        <a href="b06-g-force-radar-pro.html" class="screen-link">
+          <span class="screen-name">G-Force Radar</span>
+          <span class="screen-meta">
+            <span class="screen-tag pro">PRO</span>
+            <span class="arrow">→</span>
+          </span>
+        </a>
+        <a href="b06-analytics-pro-gated.html" class="screen-link">
+          <span class="screen-name">Analytics</span>
+          <span class="screen-meta">
+            <span class="screen-tag pro">PRO</span>
+            <span class="arrow">→</span>
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Branch 07 -->
+    <section class="branch-section">
+      <div class="branch-header">
+        <span class="branch-number">B07</span>
+        <span class="branch-name">Monetization</span>
+      </div>
+      <div class="screen-grid">
+        <a href="b07-paywall-pro-upgrade.html" class="screen-link">
+          <span class="screen-name">Paywall — Pro Upgrade</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b07-pro-activated.html" class="screen-link">
+          <span class="screen-name">Pro Activated</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b07-pro-upsell-inline-gate.html" class="screen-link">
+          <span class="screen-name">Pro Upsell Inline Gate</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Branch 09 -->
+    <section class="branch-section">
+      <div class="branch-header">
+        <span class="branch-number">B09</span>
+        <span class="branch-name">Empty/Error States</span>
+      </div>
+      <div class="screen-grid">
+        <a href="b09-empty-no-trips.html" class="screen-link">
+          <span class="screen-name">Empty — No Trips</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b09-empty-no-badges.html" class="screen-link">
+          <span class="screen-name">Empty — No Badges</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b09-loading-skeletons.html" class="screen-link">
+          <span class="screen-name">Loading Skeletons</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+        <a href="b09-error-state.html" class="screen-link">
+          <span class="screen-name">Error State</span>
+          <span class="screen-meta"><span class="arrow">→</span></span>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      <p>RevRank Design System — <span class="footer-brand">BlueprintAgents</span></p>
+    </footer>
+  </div>
+</body>
+</html>

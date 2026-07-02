@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0, user-scalable=no">
+<title>TripRank — Circular Score UI</title>
+<style>
+  :root {
+    --void:      #000000;
+    --surface:   #0A0A0A;
+    --matrix:    #00FF41;
+    --white:     #FFFFFF;
+    --text-sec:  #888888;
+    --track:     #222222;
+    --font-mono: 'Share Tech Mono', 'SF Mono', 'Fira Code', monospace;
+    --font-body: 'Rajdhani', 'SF Pro Display', 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin:0; padding:0; -ms-overflow-style:none; scrollbar-width:none; }
+  *::-webkit-scrollbar { display:none; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+    gap: 24px;
+    overflow-x: hidden;
+  }
+
+  .page-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 5px;
+    color: var(--matrix);
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .page-sub {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text-sec);
+    text-transform:).
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  /* Phone frame - iPhone 14 Pro / Pixel 7 Pro size */
+  .device {
+    width: 393px;
+    height: 852px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 48px;
+    background: var(--void);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 0 4px var(--surface), 0 24px 80px rgba(0,0,0,0.7);
+    flex-shrink: 0;
+  }
+
+  /* Scan lines overlay */
+  .scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.25;
+    background: repeating-linear-gradient(to bottom, transparent, transparent 3px, rgba(0,255,65,0.04) 3px, rgba(0,255,65,0.04) 6px);
+  }
+
+  /* ─── CIRCULAR PROGRESS COMPONENT ─── */
+  .circular-progress {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 32px auto 0;
+  }
+
+  /* SVG ring */
+  .ring-svg {
+    position: absolute;
+    inset: 0;
+    transform: rotate(-90deg); /* start from top (12 o'clock) */
+  }
+  .ring-track {
+    fill: none;
+    stroke: var(--track);
+    stroke-width: 8;
+    stroke-linecap: round;
+  }
+  .ring-fill {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 0 628; /* 2*PI*100 ≈ 628 */
+    transition: stroke-dasharray 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Glow effect on the ring */
+  .ring-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(20px);
+    opacity: 0.3;
+    transition: background 0.3s;
+  }
+
+  /* Center score text */
+  .score-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .score-label {
+    font-family:当月 var(--font-body);
+    font-size: 11px;
+    color: var(--text-sec);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .score-number {
+    font-family: var(--font-mono);
+    font-size: 72px;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .score-denominator {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-sec);
+    margin-top: -8px;
+  }
+
+  /* ─── Screen content layout ─── */
+  .screen-content {
+    padding: 64px 24px 32px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Status label beneath score */
+  .status-badge {
+    display: inline-block;
+    border: 1px solid;
+    padding: 6px 14px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 24px;
+    font-family: var(--font-body);
+    border-radius: 2px;
+  }
+
+  /* Mini stat cards row */
+  .mini-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    margin-top: 32px;
+  }
+  .mini-card {
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 16px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.02);
+  }
+  .mini-card-title {
+    font-size: 10px;
+    color: var(--text-sec);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .mini-card-value {
+    font-family: var(--font-mono);
+    font-size: 24px;
+  }
+  .mini-card-unit {
+    font-size: 12px;
+    color: var(--text-sec);
+  }
+
+  /* CTA Button */
+  .cta-btn {
+    width: 100%;
+    padding: 16px;
+    border: 1px solid;
+    font-family: var(--font-body);
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: auto;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+生来    justify-content: center;
+    max-width: 393px;
+  }
+  .controls button {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--white);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .controls button:hover, .controls button.active {
+    border-color: var(--matrix);
+    color: var(--matrix);
+  }
+
+  /* ─── Score-dependent colors ─── */
+  .theme-green  { --accent: #00FF41; }
+  .theme-amber  { --accent: #FFD60A; }
+  .theme-orange { --accent: #FF9F0A; }
+  .theme-red    { --accent: #FF453A; }
+  .theme-cyan   { --accent: #00FFFF; }
+
+  [class*="theme-"] .ring-fill     { stroke: var(--accent); }
+  [class*="theme-"] .ring-glow     { background: radial-gradient(circle, var(--accent) 0%, transparent 70%); }
+  [class*="theme-"] .score-number   { color: var(--accent); }
+  [class*="theme-"] .status-badge   { border-color: var(--accent); color: var(--accent); }
+
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<h1 class="page-title">TripRank</h1>
+<p class="page-sub">Circular Score Progress — Phone Preview</p>
+
+<div class="device theme-green" id="device">
+  <div class="scanlines"></div>
+  <div class="screen-content">
+
+    <!-- Circular Progress -->
+    <div class="circular-progress">
+      <div class="ring-glow" id="ringGlow"></div>
+      <svg class="ring-svg" viewBox="0 0 240 240">
+        <!-- Background track -->
+        <circle cx="120" cy="120" r="100" class="ring-track"/>
+        <!-- Active fill -->
+        <circle cx="120" cy="120" r="100" class="ring-fill" id="ringFill"
+                stroke-dasharray="0 628" />
+      </svg>
+      <div class="score-center">
+        <div class="score-label">Global Score</div>
+        <div class="score-number" id="scoreNum">84</div>
+        <div class="score-denominator">/100</div>
+      </div>
+    </div>
+
+    <!-- Status badge -->
+    <div class="status-badge" id="statusBadge">Great</div>
+
+    <!-- Mini stat cards -->
+    <div class="mini-stats">
+      <div class="mini-card">
+        <div class="mini-card-title">Distance</div>
+        <div class="mini-card-value" style="color:var(--accent)">14.2 <span class="mini-card-unit">km</span></div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">G-Force</div>
+        <div class="mini-card-value" style="color:var(--accent)">0.65 <span class="mini-card-unit">G</span></div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">Eco Score</div>
+        <div class="mini-card-value" style="color:var(--accent)">92<span class="mini-card-unit">%</span></div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">Streak</div>
+        <div class="mini-card-value" style="color:var(--accent)">6 <span class="mini-card-unit">days</span></div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <button class="cta-btn" id="ctaBtn" style="border-color:var(--accent); color:var(--accent)">
+      Start New Trip
+    </button>
+
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button onclick="setScore(100,'S')">100 S</button>
+  <button onclick="setScore(84,'A')">84 A</button>
+  <button onclick="setScore(62,'B')">62 B</button>
+  <button onclick="setScore(45,'C')">45 C</button>
+  <button onclick="setScore(28,'D')">28 D</button>
+  <button onclick="replay()">Replay</button>
+</div>
+
+<script>
+  const circumference = 2 * Math.PI * 100; // r=100
+
+  function setScore(score, grade) {
+    const fill = document.getElementById('ringFill');
+    const num = document.getElementById('scoreNum');
+    const badge = document.getElementById('statusBadge');
+    const device = document.getElementById('device');
+
+    // Color theme mapping
+    let theme = 'theme-green';
+    if (score >= 90) { theme = 'theme-green'; }
+    else if (score >= 75) { theme = 'theme-amber'; }
+    else if (score >= 55) { theme = 'theme-orange'; }
+    else { theme = 'theme-red'; }
+
+    device.className = 'device ' + theme;
+
+    // Animate ring
+    const offset = circumference - (score / 100) * circumference;
+    fill.style.transition = 'none';
+    fill.style.strokeDasharray = `0 ${circumference}`;
+    void fill.offsetWidth; // force reflow
+    fill.style.transition = 'stroke-dasharray 1.2s cubic-bezier(0.22, 1, 0.36, 1)';
+    fill.style.strokeDasharray = `${(score/100)*circumference} ${circumference}`;
+
+    // Animate number counting up
+    animateNumber(num, score, 1000);
+
+    // Update status badge
+    const labels = {S:'Elite', A:'Great', B:'Good', C:'Okay', D:'Poor'};
+    badge.textContent = labels[grade] || grade;
+    badge.style.borderColor = getComputedStyle(document.querySelector('.theme-'+theme.split('-')[1])).getPropertyValue('--accent');
+  }
+
+  function animateNumber(el, target, duration) {
+    const start = parseInt(el.textContent) || 0;
+    const startTime = performance.now();
+    function update(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(start + (target - start) * eased);
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }
+
+  function replay() {
+    setScore(84, 'A');
+  }
+
+  // Init
+  setTimeout(() => setScore(84, 'A'), 300);
+</script>
+
+</body>
+</html>

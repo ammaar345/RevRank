@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Safe zone: 18dp inset from each side = 72x72 centered in 108x108 -->
+
+    <!-- T vertical mast -->
+    <path
+        android:fillColor="#00FF41"
+        android:pathData="M50,30 L50,62 L58,62 L58,30 Z" />
+
+    <!-- T horizontal bar (left half) + needle sweep right forming arrow head -->
+    <path
+        android:fillColor="#00FF41"
+        android:pathData="M38,30 L68,30 L68,38 L38,38 Z" />
+
+    <!-- Speedometer arc trailing from the right end of the T -->
+    <!-- A thin curved needle-like line that arcs from the horizontal bar right end -->
+    <path
+        android:fillColor="#00FF41"
+        android:pathData="M68,34
+                 C68,34 76,38 80,46
+                 C84,54 82,64 76,70
+                 C70,76 62,78 56,76
+                 L56,68
+                 C60,70 66,68 70,64
+                 C74,60 74,54 72,48
+                 C70,42 66,38 62,36
+                 Z" />
+
+    <!-- Small glowing dot at needle tip -->
+    <path
+        android:fillColor="#00FF41"
+        android:fillAlpha="0.8"
+        android:pathData="M76,70 A4,4 0,1,1 76,70.01 Z" />
+
+    <!-- Chevron mark on speedometer arc -->
+    <path
+        android:fillColor="#00FF41"
+        android:fillAlpha="0.5"
+        android:pathData="M72,48 L76,44 L80,48 Z" />
+</vector>

@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>REVRANK — Sign In</title>
+
+  <!-- ===== DESIGN SYSTEM (tokens + all specs) ===== -->
+  <link rel="stylesheet" href="../revrank-theme.css">
+
+  <style>
+    /* ============================================================
+       SCREEN-SPECIFIC — Sign In / Splash
+       Inherits all design tokens from revrank-theme.css
+       ============================================================ */
+
+    /* --- Boot/Loading screen --- */
+    #boot-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: var(--void);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      transition: opacity 0.8s var(--ease-out-expo);
+    }
+    #boot-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .boot-container {
+      width: 320px;
+      max-width: 90vw;
+      position: relative;
+      z-index: 2;
+    }
+
+    .boot-header {
+      font-family: var(--font-terminal);
+      font-size: 11px;
+      color: var(--phosphor);
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      opacity: 0.7;
+    }
+    .boot-header::before {
+      content: '> REVRANK // BOOT SEQ v2.0';
+      animation: bootTextFlicker 3s steps(1) infinite;
+    }
+    @keyframes bootTextFlicker {
+      0%, 98%, 100% { opacity: 0.7; }
+      99% { opacity: 0.3; }
+    }
+
+    .boot-status {
+      font-family: var(--font-terminal);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      min-height: 1.4em;
+    }
+    .boot-status::before { content: '> '; color: var(--phosphor); }
+    .boot-status.complete { color: var(--phosphor); }
+    .boot-pct {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-faint);
+      text-align: right;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    .boot-bar-wrapper .loading-bar {
+      height: 4px;
+      background: var(--text-track);
+    }
+    .boot-bar-wrapper .loading-bar__fill {
+      background: var(--phosphor);
+      filter: drop-shadow(0 0 6px var(--phosphor));
+    }
+
+    .boot-data {
+      margin-top: 20px;
+      font-family: var(--font-terminal);
+      font-size: 10px;
+      color: var(--text-faint);
+      line-height: 1.8;
+      opacity: 0.5;
+    }
+    .boot-data span {
+      display: block;
+      opacity: 0;
+      animation: dataScroll 0.3s var(--ease-out-expo) forwards;
+    }
+    @keyframes dataScroll {
+      0%   { opacity: 0; transform: translateY(4px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- Main sign-in screen --- */
+    #main-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity 1s var(--ease-out-expo);
+    }
+    #main-screen.visible { opacity: 1; }
+
+    /* --- Top section: logo + tagline --- */
+    .signin-top {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 44px 20px 0;
+      position: relative;
+      z-index: 3;
+    }
+
+    .signin-logo {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--phosphor);
+      letter-spacing: 8px;
+      text-align: center;
+      text-shadow:
+        0 0 8px rgba(0, 255, 102, 0.65),
+        0 0 20px rgba(0, 255, 102, 0.45),
+        0 0 40px rgba(0, 255, 102, 0.3),
+        0 0 70px rgba(0, 255, 102, 0.18),
+        0 0 100px rgba(0, 255, 102, 0.1);
+      position: relative;
+      margin-bottom: 6px;
+      user-select: none;
+      line-height: 1.1;
+    }
+    .signin-logo::before {
+      content: attr(data-text);
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      color: rgba(255, 0, 0, 0.15);
+      transform: translate(1.5px, 0);
+      z-index: -1;
+    }
+    .signin-logo::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      color: rgba(0, 80, 255, 0.15);
+      transform: translate(-1.5px, 0);
+      z-index: -2;
+    }
+
+    .signin-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 4px;
+      text-align: center;
+      text-transform: uppercase;
+      min-height: 1.3em;
+      margin-bottom: 0;
+    }
+
+    /* ============================================================
+       HERO MOTORBIKE SECTION — Massive, Dominating, 3/4 Front View
+       Container fills all vertical space between header & button.
+       Uses <img> tag — swap the src for a high-quality 3D render.
+       ============================================================ */
+
+    .signin-hero {
+      flex: 1;
+      position: relative;
+      margin: -10px -20px 0;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* --- Intense Matrix Green underglow on the terminal floor --- */
+    .hero-underglow {
+      position: absolute;
+      bottom: 4%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 85%;
+      max-width: 420px;
+      height: 140px;
+      background: radial-gradient(
+        ellipse at center bottom,
+        rgba(0, 255, 65, 0.25) 0%,
+        rgba(0, 255, 65, 0.08) 30%,
+        rgba(0, 255, 65, 0.02) 50%,
+        transparent 75%
+      );
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(15px);
+      animation: underglowPulse 3s ease-in-out infinite alternate;
+    }
+    @keyframes underglowPulse {
+      0%   { opacity: 0.5; width: 80%; }
+      100% { opacity: 0.8; width: 90%; }
+    }
+
+    .hero-shadow {
+      position: absolute;
+      bottom: 4%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      max-width: 350px;
+      height: 40px;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(0, 0, 0, 0.7) 0%,
+        transparent 70%
+      );
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(6px);
+    }
+
+    /* --- Full-screen background layer (covers entire phone screen) --- */
+    .main-bg-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* --- Ghost bike image inside the background layer --- */
+    .bike-hero-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      mix-blend-mode: screen;
+      opacity: 0.15;
+      filter:
+        grayscale(0.5)
+        brightness(0.7)
+        contrast(1.1);
+      z-index: 0;
+    }
+
+    /* --- Gradient fade: bottom of image fades into dark green --- */
+    .hero-bg-fade {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(0, 15, 0, 1) 100%
+      );
+    }
+
+    /* --- Bottom section: button + terms --- */
+    .signin-bottom {
+      flex-shrink: 0;
+      padding: 0 32px 44px;
+      position: relative;
+      z-index: 3;
+    }
+
+    /* ============================================================
+       GOOGLE SIGN-IN BUTTON — CRT Terminal Ghost Button
+       Sharp rectangle, transparent bg, neon green border,
+       monospace font, terminal block selection on hover.
+       ============================================================ */
+
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: auto;
+      min-width: 240px;
+      margin: 0 auto;
+      padding: 14px 28px;
+      background: transparent;
+      color: var(--phosphor);
+      border: 1.5px solid var(--phosphor);
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      box-shadow:
+        0 0 6px var(--phosphor-glow-sm),
+        0 0 12px rgba(0,255,102,0.06);
+      text-shadow: 0 0 6px rgba(0,255,102,0.25);
+      transition:
+        background var(--duration-fast) ease,
+        color var(--duration-fast) ease,
+        box-shadow var(--duration-med) ease,
+        transform 0.12s ease;
+    }
+
+    .btn-google svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      fill: currentColor;
+      transition: transform 0.2s ease;
+    }
+
+    .btn-google:hover {
+      background: var(--phosphor);
+      color: #000000;
+      border-color: var(--phosphor);
+      box-shadow:
+        0 0 12px var(--phosphor-glow),
+        0 0 30px var(--phosphor-glow-sm),
+        0 0 60px rgba(0,255,102,0.06);
+      text-shadow: none;
+      transform: scale(1.02);
+    }
+    .btn-google:hover svg { transform: scale(1.08); }
+    .btn-google:active {
+      transform: scale(0.97);
+      transition: transform 0.06s ease;
+    }
+
+    .btn-google .btn-text {
+      position: relative;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .btn-google .btn-cursor {
+      display: inline-block;
+      font-size: 11px;
+      color: var(--phosphor);
+      line-height: 1;
+      animation: blink 0.8s steps(1) infinite;
+    }
+    .btn-google:hover .btn-cursor { color: #000000; }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0; }
+    }
+
+    /* -- Ripple effect -- */
+    .btn-google .ripple-container {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .btn-google .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(0,255,102,0.2);
+      transform: scale(0);
+      animation: rippleExpand 0.6s var(--ease-out-expo) forwards;
+      pointer-events: none;
+    }
+    @keyframes rippleExpand {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* -- Execution overlay -- */
+    .btn-google .exec-overlay {
+      position: absolute;
+      inset: -1px;
+      background: #000000;
+      border: 1.5px solid var(--phosphor);
+      border-radius: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: var(--font-terminal);
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--phosphor);
+      text-shadow: 0 0 8px var(--phosphor-glow);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 3;
+      transition: opacity 0.1s ease;
+    }
+    .btn-google .exec-overlay .spinner {
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid var(--phosphor);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.5s linear infinite;
+      box-shadow: 0 0 6px var(--phosphor-glow-sm);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-google .exec-overlay .exec-text {
+      font-family: var(--font-terminal);
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    .btn-google.executing {
+      pointer-events: none;
+      animation: btnTerminalGlitch 0.4s var(--ease-glitch) forwards;
+    }
+    .btn-google.executing .btn-content { opacity: 0; transition: opacity 0.05s; }
+    .btn-google.executing .exec-overlay { opacity: 1; }
+
+    @keyframes btnTerminalGlitch {
+      0%   { transform: scale(1); filter: brightness(1); }
+      15%  { transform: scale(0.97) translateX(-2px); filter: brightness(0.6); }
+      30%  { transform: translateX(2px); filter: brightness(1.4); }
+      45%  { transform: scale(0.98) translateX(-1px); filter: brightness(0.8); }
+      60%  { transform: translateX(1px); filter: brightness(1.6); }
+      80%  { transform: scale(1.02); filter: brightness(1); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    .btn-google.clicked {
+      animation:
+        btnCompress 0.1s var(--ease-out-expo) 0s,
+        btnExpand 0.2s var(--ease-spring) 0.1s;
+    }
+    @keyframes btnCompress {
+      0%   { transform: scale(1); }
+      100% { transform: scale(0.94); }
+    }
+    @keyframes btnExpand {
+      0%   { transform: scale(0.94); }
+      60%  { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+
+    .signin-terms {
+      font-size: 11px;
+      color: var(--text-faint);
+      text-align: center;
+      margin-top: 24px;
+      line-height: 1.8;
+    }
+    .signin-terms a {
+      color: var(--text-dim);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--phosphor-dark);
+      transition: color var(--duration-fast) ease;
+    }
+    .signin-terms a:hover { color: var(--phosphor); }
+
+    .signin-version {
+      position: absolute;
+      bottom: 12px;
+      left: 0; right: 0;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--text-faint);
+      letter-spacing: 1px;
+      opacity: 0.4;
+      z-index: 3;
+    }
+
+    .audio-indicator {
+      position: absolute;
+      top: 20px; right: 20px;
+      z-index: 10;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      letter-spacing: 1px;
+      color: var(--text-faint);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .audio-indicator.visible { opacity: 0.4; }
+    .audio-indicator .dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--text-faint);
+      transition: background 0.3s ease;
+    }
+    .audio-indicator.active .dot {
+      background: var(--phosphor);
+      box-shadow: 0 0 6px var(--phosphor);
+      animation: pulse 2s infinite;
+    }
+
+    #phone-frame { position: relative; }
+
+    /* --- App screen scanline overlay (absolute, inside phone screen) --- */
+    .app-scanlines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 255, 102, 0.04) 2px,
+        rgba(0, 255, 102, 0.04) 4px
+      );
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== CRT OVERLAYS ===== -->
+  <div class="crt-scanlines crt-scanlines--phosphor"></div>
+  <div class="crt-vignette crt-vignette--tinted"></div>
+  <div class="crt-retrace"></div>
+
+  <!-- ===== HUD BACKGROUND MESH ===== -->
+  <div class="hud-bg"></div>
+
+  <!-- ===== MATRIX RAIN CONTAINER ===== -->
+  <div id="matrix-rain" class="matrix-rain-container"></div>
+
+  <!-- ===== BOOT / LOADING SCREEN ===== -->
+  <div id="boot-overlay">
+    <div class="boot-container">
+      <div class="boot-header"></div>
+      <div class="boot-bar-wrapper">
+        <div class="loading-bar">
+          <div class="loading-bar__fill" id="boot-bar-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="boot-status" id="boot-status">initializing...</div>
+      <div class="boot-pct" id="boot-pct">0%</div>
+      <div class="boot-data" id="boot-data">
+        <span>scsi0: scanning bus... ok</span>
+        <span>hda: 32768 cylinders, 16 heads, 63 sectors</span>
+        <span>init: entering runlevel 3</span>
+        <span>net: eth0 — 10.0.0.42/24</span>
+        <span>sys: loading REVRANK overlay... ok</span>
+        <span>██ REVRANK v2.0 — SYSTEM READY ██</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PHONE FRAME ===== -->
+  <div id="phone-frame" class="phone-frame">
+
+    <!-- ===== MAIN SCREEN ===== -->
+    <div id="main-screen">
+      <div class="audio-indicator" id="audio-indicator">
+        <span class="dot"></span>
+        <span>AUDIO</span>
+      </div>
+
+      <!-- ===== TOP: Logo + Tagline ===== -->
+      <div class="signin-top scan-fade-in">
+        <div class="signin-logo" id="logo-glitch" data-text="REVRANK">REVRANK</div>
+        <div class="signin-sub">
+          <span id="subtitle-text"></span>
+          <span class="cursor-blink cursor-blink--block"></span>
+        </div>
+      </div>
+
+      <!-- ===== BACKGROUND LAYER: covers entire phone screen ===== -->
+      <div class="main-bg-layer">
+        <img
+          class="bike-hero-img"
+          src="../A_high-resolution,_detailed_vertical_image_202606290631.jpeg"
+          alt="REVRANK — futuristic sports motorcycle"
+          draggable="false"
+        />
+        <div class="hero-bg-fade"></div>
+      </div>
+
+      <!-- ===== HERO: spacer + underglow effects ===== -->
+      <div class="signin-hero">
+        <div class="hero-underglow"></div>
+        <div class="hero-shadow"></div>
+      </div>
+
+      <!-- ===== BOTTOM: Button + Terms ===== -->
+      <div class="signin-bottom scan-fade-in scan-fade-in--d3">
+        <button class="btn-google" id="btn-signin">
+          <span class="ripple-container"></span>
+          <span class="btn-content" style="display:flex;align-items:center;gap:12px;position:relative;z-index:1">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span class="btn-text" id="btn-typewriter">
+              <span id="btn-typewriter-text"></span>
+              <span class="btn-cursor blink">&#x2588;</span>
+            </span>
+          </span>
+          <span class="exec-overlay">
+            <span class="spinner"></span>
+            <span class="exec-text"></span>
+          </span>
+        </button>
+        <div class="signin-terms">
+          By continuing, you agree to our<br>
+          <a href="#">Terms of Service</a> &middot; <a href="#">Privacy Policy</a>
+        </div>
+      </div>
+
+      <div class="signin-version">REVRANK v2.0.1 // build 2026.06.28</div>
+    </div>
+
+    <!-- App screen scanline overlay (above all content) -->
+    <div class="app-scanlines"></div>
+  </div>
+
+  <!-- ===== JAVASCRIPT — Theme Engine + Page Logic ===== -->
+  <script src="../revrank-theme.js"></script>
+  <script>
+    (function() {
+      'use strict';
+
+      /* ---- 1. Matrix Rain ---- */
+      var container = document.getElementById('matrix-rain');
+      var rain = new RevRank.MatrixRain(container, {
+        density: 0.6,
+        speed: 0.8,
+        fontSize: 14,
+        color: '#00FF66',
+        headColor: '#AAFFCC',
+        tailLength: 14,
+        idleOpacity: 0.30,
+        loadingOpacity: 0.90,
+      });
+      rain.start();
+
+      /* ---- 2. Audio Engine ---- */
+      var audio = new RevRank.Audio({ enabled: true, volume: 0.5 });
+      window.RevRank.audioInstance = audio;
+
+      var audioIndicator = document.getElementById('audio-indicator');
+
+      function initAudio() {
+        audio.init().then(function () {
+          audio.startHum();
+          audioIndicator.classList.add('active');
+        });
+        document.removeEventListener('click', initAudio);
+        document.removeEventListener('touchstart', initAudio);
+      }
+      document.addEventListener('click', initAudio, { once: true });
+      document.addEventListener('touchstart', initAudio, { once: true });
+
+      setTimeout(function () {
+        audioIndicator.classList.add('visible');
+      }, 2000);
+
+      /* ---- 3. Boot / Loading Sequence ---- */
+      var bootOverlay = document.getElementById('boot-overlay');
+      var bootBarFill = document.getElementById('boot-bar-fill');
+      var bootStatus = document.getElementById('boot-status');
+      var bootPct = document.getElementById('boot-pct');
+      var mainScreen = document.getElementById('main-screen');
+
+      rain.setLoading(true);
+
+      var dataLines = document.querySelectorAll('#boot-data span');
+      for (var d = 0; d < dataLines.length; d++) {
+        dataLines[d].style.animationDelay = (0.3 + d * 0.15) + 's';
+      }
+
+      var bootSteps = [
+        { pct: 8,  msg: 'scanning scsi devices...' },
+        { pct: 15, msg: 'mount /dev/hda0 — ok' },
+        { pct: 18, msg: 'loading kernel modules...' },
+        { pct: 27, msg: 'init: starting system services' },
+        { pct: 35, msg: 'calibrating phosphor display...' },
+        { pct: 40, msg: 'GPS timebase sync — acquired' },
+        { pct: 52, msg: 'loading HUD overlay v2.0' },
+        { pct: 58, msg: 'sensor array — self test ok' },
+        { pct: 67, msg: 'establishing secure channel...' },
+        { pct: 73, msg: 'syncing user profile...' },
+        { pct: 82, msg: 'rendering CRT composite...' },
+        { pct: 88, msg: 'applying chromatic correction' },
+        { pct: 94, msg: 'finalizing boot sequence...' },
+        { pct: 98, msg: 'activating RF shield — on' },
+        { pct: 100, msg: 'SYSTEM READY.' },
+      ];
+
+      var stepIndex = 0;
+      var stepDuration = 2200 / bootSteps.length;
+
+      function runBootStep() {
+        if (stepIndex >= bootSteps.length) {
+          bootBarFill.style.width = '100%';
+          bootStatus.textContent = '> SYSTEM READY';
+          bootStatus.classList.add('complete');
+          bootPct.textContent = '100%';
+
+          setTimeout(function () {
+            if (Math.random() < 0.7) audio.glitchSFX(0.3);
+          }, 200);
+
+          setTimeout(function () {
+            bootOverlay.classList.add('fade-out');
+            mainScreen.classList.add('visible');
+            rain.setLoading(false);
+            startTypewriter();
+            startGlitchScheduler();
+            startButtonTypewriter();
+            setTimeout(function () {
+              bootOverlay.style.display = 'none';
+            }, 900);
+          }, 600);
+          return;
+        }
+
+        var step = bootSteps[stepIndex];
+        bootBarFill.style.width = step.pct + '%';
+        bootPct.textContent = step.pct + '%';
+        bootStatus.textContent = '> ' + step.msg;
+
+        if (stepIndex % 2 === 0) { audio.textClick(); }
+        if (stepIndex % 4 === 3) {
+          setTimeout(function () { audio.glitchSFX(0.15); }, 50);
+        }
+
+        stepIndex++;
+        var delay = stepDuration * (0.5 + Math.random() * 1.0);
+        setTimeout(runBootStep, delay);
+      }
+
+      setTimeout(runBootStep, 400);
+
+      /* ---- 4. Typewriter Subtitle ---- */
+      function startTypewriter() {
+        var subtitleText = document.getElementById('subtitle-text');
+        var fullText = 'YOUR RIDE HAS A SCORE';
+        var ci = 0;
+
+        function typeChar() {
+          if (ci >= fullText.length) return;
+          subtitleText.textContent += fullText[ci];
+          if (fullText[ci] !== ' ' && Math.random() < 0.3) {
+            audio.textClick();
+          }
+          ci++;
+          setTimeout(typeChar, 40 + Math.random() * 60);
+        }
+        setTimeout(typeChar, 300);
+      }
+
+      /* ---- 5. Ambient Glitch Scheduler ---- */
+      function startGlitchScheduler() {
+        var logo = document.getElementById('logo-glitch');
+        var variants = ['glitchMicro', 'glitchVertical', 'glitchFlicker', 'glitchHShift'];
+
+        function scheduleGlitch() {
+          var delay = 3000 + Math.random() * 4000;
+          setTimeout(function () {
+            if (!mainScreen.classList.contains('visible')) {
+              scheduleGlitch();
+              return;
+            }
+            var v = variants[Math.floor(Math.random() * variants.length)];
+            logo.style.animation = 'none';
+            void logo.offsetWidth;
+            logo.style.animation = v + ' 0.15s cubic-bezier(0.25,0.46,0.45,0.94) 1';
+            audio.glitchSFX(0.2 + Math.random() * 0.2);
+            setTimeout(function () { logo.style.animation = ''; }, 200);
+            scheduleGlitch();
+          }, delay);
+        }
+        scheduleGlitch();
+      }
+
+      /* ---- 6a. Looped Button Typewriter ---- */
+      var _btnTypewriterActive = true;
+
+      function startButtonTypewriter() {
+        var textEl = document.getElementById('btn-typewriter-text');
+        var fullText = 'SIGN IN WITH GOOGLE';
+        var i = 0;
+        var phase = 'typing';
+
+        function scheduleNext() {
+          if (!_btnTypewriterActive) return;
+
+          if (phase === 'typing') {
+            if (i < fullText.length) {
+              textEl.textContent += fullText[i];
+              if (fullText[i] !== ' ' && Math.random() < 0.35) audio.textClick();
+              i++;
+              setTimeout(scheduleNext, 50 + Math.random() * 60);
+            } else {
+              phase = 'pause';
+              setTimeout(scheduleNext, 2200);
+            }
+            return;
+          }
+
+          if (phase === 'pause') {
+            phase = 'glitchOut';
+            textEl.style.animation = 'glitchFlicker 0.2s steps(2) 1';
+            if (audio) audio.glitchSFX(0.15);
+            setTimeout(scheduleNext, 250);
+            return;
+          }
+
+          if (phase === 'glitchOut') {
+            textEl.style.animation = '';
+            phase = 'deleting';
+            function deleteChar() {
+              if (!_btnTypewriterActive) return;
+              var cur = textEl.textContent;
+              if (cur.length > 0) {
+                textEl.textContent = cur.slice(0, -1);
+                if (Math.random() < 0.2) audio.textClick();
+                setTimeout(deleteChar, 25 + Math.random() * 20);
+              } else {
+                phase = 'cooldown';
+                setTimeout(scheduleNext, 800);
+              }
+            }
+            deleteChar();
+            return;
+          }
+
+          if (phase === 'cooldown') {
+            i = 0;
+            phase = 'typing';
+            setTimeout(scheduleNext, 200);
+            return;
+          }
+          scheduleNext();
+        }
+
+        setTimeout(scheduleNext, 600);
+      }
+
+      /* ---- 6b. Sign-In Button: Click sequence ---- */
+      var btnSignIn = document.getElementById('btn-signin');
+      var rippleContainer = btnSignIn.querySelector('.ripple-container');
+
+      btnSignIn.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (this.classList.contains('executing')) return;
+
+        _btnTypewriterActive = false;
+        document.getElementById('btn-typewriter-text').textContent = 'SIGN IN WITH GOOGLE';
+
+        audio.ensureResumed();
+
+        var rect = this.getBoundingClientRect();
+        var ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        var size = Math.max(rect.width, rect.height);
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        rippleContainer.appendChild(ripple);
+        setTimeout(function () { ripple.remove(); }, 700);
+
+        this.classList.add('clicked');
+        setTimeout(function () { btnSignIn.classList.remove('clicked'); }, 500);
+
+        audio.executionChime();
+
+        setTimeout(function () {
+          btnSignIn.classList.add('executing');
+
+          var execText = btnSignIn.querySelector('.exec-text');
+          var msg = 'EXECUTING';
+          execText.textContent = '';
+          var ci = 0;
+          var typeTimer = setInterval(function () {
+            if (ci >= msg.length) {
+              clearInterval(typeTimer);
+              return;
+            }
+            execText.textContent += msg[ci];
+            if (Math.random() < 0.5) audio.textClick();
+            ci++;
+          }, 60);
+
+          var frame = document.getElementById('phone-frame');
+          frame.classList.add('screen-jitter');
+          setTimeout(function () { frame.classList.remove('screen-jitter'); }, 400);
+
+          frame.classList.add('color-invert-flash');
+          setTimeout(function () { frame.classList.remove('color-invert-flash'); }, 300);
+
+          setTimeout(function () {
+            btnSignIn.classList.remove('executing');
+            execText.textContent = '';
+            document.getElementById('btn-typewriter-text').textContent = '';
+            _btnTypewriterActive = true;
+            startButtonTypewriter();
+          }, 1800);
+        }, 300);
+      });
+
+      btnSignIn.addEventListener('mouseenter', function () {
+        audio.hoverBlip();
+      });
+
+      console.log('[REVRANK] Sign-in screen initialized.');
+    })();
+  </script>
+
+</body>
+</html>
