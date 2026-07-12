@@ -7,11 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -19,17 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.revrank.presentation.components.RevRankButton
+import com.revrank.presentation.components.TerminalScaffold
 import com.revrank.presentation.theme.MatrixGreen
 import com.revrank.presentation.theme.ShareTechMono
-import com.revrank.presentation.theme.Surface
 import com.revrank.presentation.theme.TextPrimary
 import com.revrank.presentation.theme.TextSecondary
 import com.revrank.presentation.theme.RevRankTypography
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.filter
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
@@ -40,12 +35,13 @@ fun UsernamePickerScreen(
     isAvailable: Boolean?
 ) {
     var username by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
 
+    TerminalScaffold(screenId = "USERNAME") {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .systemBarsPadding()
+            .padding(horizontal = 28.dp, vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -102,11 +98,13 @@ fun UsernamePickerScreen(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(28.dp))
         RevRankButton(
             text = "Confirm",
             onClick = { onConfirm(username) },
-            enabled = username.length >= 3 && isAvailable == true
+            enabled = username.length >= 3 && isAvailable == true,
+            primary = true
         )
+    }
     }
 }

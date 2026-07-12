@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.revrank.domain.model.Rank
 import com.revrank.domain.model.WeeklyChallenge
 import com.revrank.presentation.components.RankBadge
+import com.revrank.presentation.components.TerminalScaffold
 import com.revrank.presentation.theme.MatrixGreen
 import com.revrank.presentation.theme.Rajdhani
 import com.revrank.presentation.theme.ShareTechMono
@@ -53,16 +54,16 @@ fun HomeScreen(
         if (nextIndex < Rank.entries.size) Rank.entries[nextIndex] else null
     }
 
+    TerminalScaffold(screenId = "HOME") {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // ─── GREETING ───
         item {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             Text(
                 text = greeting,
                 fontSize = 16.sp,
@@ -137,8 +138,9 @@ fun HomeScreen(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(80.dp)) // Space for FAB
+            Spacer(modifier = Modifier.height(96.dp)) // Space for FAB
         }
+    }
     }
 
     // ─── START TRIP FAB ───
@@ -148,7 +150,8 @@ fun HomeScreen(
         shape = RoundedCornerShape(4.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(20.dp)
+            .systemBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 24.dp)
     ) {
         Text(
             text = "▶ START TRIP",
