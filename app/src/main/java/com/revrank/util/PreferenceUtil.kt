@@ -25,4 +25,12 @@ object PreferenceUtil {
     fun setHasSeenPaywall(context: Context, value: Boolean) {
         getPrefs(context).edit().putBoolean("has_seen_paywall", value).apply()
     }
+
+    /** Tracks whether the user has finished onboarding (survives process death). */
+    fun hasCompletedOnboarding(context: Context): Boolean =
+        getPrefs(context).getBoolean("onboarding_complete", false)
+
+    fun setOnboardingComplete(context: Context, value: Boolean) {
+        getPrefs(context).edit().putBoolean("onboarding_complete", value).apply()
+    }
 }

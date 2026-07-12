@@ -11,9 +11,16 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.content.Context
 import com.revrank.domain.model.VehicleType
+import com.revrank.util.PreferenceUtil
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
-class OnboardingViewModel @Inject constructor() : ViewModel() {
+@HiltViewModel
+class OnboardingViewModel @Inject constructor(
+    @ApplicationContext private val context: Context
+) : ViewModel() {
 
     private val _currentPage = MutableStateFlow(0)
     val currentPage: StateFlow<Int> = _currentPage
@@ -33,7 +40,7 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
     private val _motionGranted = MutableStateFlow(false)
     val motionGranted: StateFlow<Boolean> = _motionGranted
 
-    private val _onboardingComplete = MutableStateFlow(false)
+    private val _onboardingComplete = MutableStateFlow(PreferenceUtil.hasCompletedOnboarding(context))
     val onboardingComplete: StateFlow<Boolean> = _onboardingComplete
 
     fun setPage(page: Int) {
@@ -64,6 +71,6 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
 
     fun completeOnboarding() {
         _onboardingComplete.value = true
-        // Persist to DataStore in production
+        PreferenceUtil.setOnboardingComplete(context, true)
     }
 }
