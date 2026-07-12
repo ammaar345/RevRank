@@ -217,6 +217,16 @@ fun SignInScreen(
                 )
             }
 
+            // Debug-only bypass so the authed UI can be exercised on an emulator
+            // without real Google credentials. Stripped from release builds.
+            if (com.revrank.BuildConfig.DEBUG) {
+                Spacer(Modifier.height(12.dp))
+                RevRankButton(
+                    text = "DEV: skip auth",
+                    onClick = onAuthenticated
+                )
+            }
+
             Spacer(Modifier.height(24.dp))
             Text(
                 text = "By continuing, you agree to our\nTerms of Service · Privacy Policy",

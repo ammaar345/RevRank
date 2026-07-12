@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,6 +33,7 @@ import com.revrank.domain.model.Trip
 import com.revrank.presentation.components.EmptyState
 import com.revrank.presentation.components.EmptyStates
 import com.revrank.presentation.components.ProGate
+import com.revrank.presentation.components.TerminalScaffold
 import com.revrank.presentation.theme.MatrixGreen
 import com.revrank.presentation.theme.Rajdhani
 import com.revrank.presentation.theme.ShareTechMono
@@ -55,53 +57,54 @@ fun TripsScreen(
 ) {
     val trips by viewModel.trips.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        Text(
-            text = "TRIPS",
-            fontFamily = ShareTechMono,
-            fontSize = 18.sp,
-            color = Color.White,
-            letterSpacing = 2.sp,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
-        )
-
-        if (trips.isEmpty()) {
-            EmptyState(
-                icon = EmptyStates.noTrips.first,
-                headline = EmptyStates.noTrips.second,
-                subtext = EmptyStates.noTrips.third
+    TerminalScaffold(screenId = "HISTORY") {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+        ) {
+            Text(
+                text = "TRIPS",
+                fontFamily = ShareTechMono,
+                fontSize = 18.sp,
+                color = Color.White,
+                letterSpacing = 2.sp,
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 40.dp, bottom = 16.dp)
             )
-            return@Column
-        }
 
-        ProGate(
-            content = { TripsList(trips = trips, isPro = true, onTripClick = onTripClick) },
-            fallback = {
-                val thirtyDaysAgo =
-                    System.currentTimeMillis() - FREE_HISTORY_DAYS * 24 * 60 * 60 * 1000
-                val limited = trips
-                    .filter { it.startTime >= thirtyDaysAgo }
-                    .take(FREE_HISTORY_MAX)
-                Column {
-                    TripsList(
-                        trips = limited,
-                        isPro = false,
-                        onTripClick = onTripClick,
-                        footer = {
-                            FreeLimitFooter(
-                                shown = limited.size,
-                                total = trips.size,
-                                onUpgradeClick = onUpgradeClick
-                            )
-                        }
-                    )
-                }
+            // if/else — no early return from the composable, which corrupts
+            // Compose's group stack when the trips flow flips empty -> non-empty.
+            if (trips.isEmpty()) {
+                EmptyState(
+                    icon = EmptyStates.noTrips.first,
+                    headline = EmptyStates.noTrips.second,
+                    subtext = EmptyStates.noTrips.third
+                )
+            } else {
+                ProGate(
+                    content = { TripsList(trips = trips, isPro = true, onTripClick = onTripClick) },
+                    fallback = {
+                        val thirtyDaysAgo =
+                            System.currentTimeMillis() - FREE_HISTORY_DAYS * 24 * 60 * 60 * 1000
+                        val limited = trips
+                            .filter { it.startTime >= thirtyDaysAgo }
+                            .take(FREE_HISTORY_MAX)
+                        TripsList(
+                            trips = limited,
+                            isPro = false,
+                            onTripClick = onTripClick,
+                            footer = {
+                                FreeLimitFooter(
+                                    shown = limited.size,
+                                    total = trips.size,
+                                    onUpgradeClick = onUpgradeClick
+                                )
+                            }
+                        )
+                    }
+                )
             }
-        )
+        }
     }
 }
 

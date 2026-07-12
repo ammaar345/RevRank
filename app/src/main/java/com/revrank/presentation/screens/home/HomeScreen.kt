@@ -54,6 +54,7 @@ fun HomeScreen(
         if (nextIndex < Rank.entries.size) Rank.entries[nextIndex] else null
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     TerminalScaffold(screenId = "HOME") {
     LazyColumn(
         modifier = Modifier
@@ -143,15 +144,15 @@ fun HomeScreen(
     }
     }
 
-    // ─── START TRIP FAB ───
+    // ─── START TRIP FAB (bottom-anchored) ───
     FloatingActionButton(
         onClick = onStartTrip,
         containerColor = MatrixGreen,
         shape = RoundedCornerShape(4.dp),
         modifier = Modifier
+            .align(Alignment.BottomCenter)
             .fillMaxWidth()
-            .systemBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 24.dp)
+            .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         Text(
             text = "▶ START TRIP",
@@ -160,6 +161,7 @@ fun HomeScreen(
             color = Color.Black,
             letterSpacing = 3.sp
         )
+    }
     }
 }
 

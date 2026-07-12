@@ -252,6 +252,9 @@ fun BadgeDetailSheet(
     onDismiss: () -> Unit
 ) {
     if (!isVisible) return
+    // NOTE: the guard above is safe only because this composable is called at a
+    // FIXED position in its parent (never in a list/branch that also emits other
+    // content), so the early return doesn't shift sibling group keys.
 
     Box(
         modifier = Modifier
