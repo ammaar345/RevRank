@@ -5,8 +5,9 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.revrank.domain.model.GForcePoint
+import com.revrank.domain.model.GpsPoint
 import java.lang.reflect.Type
-import java.util.List
 
 @Entity(tableName = "trips")
 data class TripEntity(
@@ -32,27 +33,32 @@ data class TripEntity(
     // Pro features: G-force visualizer data
     val gForcePointsJson: String? = null
 ) {
-    // Type converters for JSON<List<...>> storage
+    // JSON <-> List converters for Room storage. Uses the domain point models
+    // directly so no entity<->domain mapping is needed for point data.
     companion object {
         private val gson = Gson()
         private val pointListType: Type = object : TypeToken<List<GpsPoint>>() {}.type
         private val gForcePointListType: Type = object : TypeToken<List<GForcePoint>>() {}.type
 
+        @JvmStatic
         @TypeConverter
         fun gpsPointsToJson(points: List<GpsPoint>?): String? =
             points?.let { gson.toJson(it) }
 
+        @JvmStatic
         @TypeConverter
-        fun jsonToGpsPoints(json: String?): List<GpsPoint>? =
-            json?.let { gson.fromJson(it, pointListType) } ?: emptyList()
+        fun jsonToGpsPoints(json: String?): List<GpsPoint> =
+            json?.let { gson.fromJson<List<GpsPoint>>(it, pointListType) } ?: emptyList()
 
+        @JvmStatic
         @TypeConverter
         fun gForcePointsToJson(points: List<GForcePoint>?): String? =
             points?.let { gson.toJson(it) }
 
+        @JvmStatic
         @TypeConverter
-        fun jsonToGForcePoints(json: String?): List<GForcePoint>? =
-            json?.let { gson.fromJson(it, gForcePointListType) } ?: emptyList()
+        fun jsonToGForcePoints(json: String?): List<GForcePoint> =
+            json?.let { gson.fromJson<List<GForcePoint>>(it, gForcePointListType) } ?: emptyList()
     }
 
     // Convenience getters (non-persisted)
@@ -62,19 +68,3 @@ data class TripEntity(
     val gForcePoints: List<GForcePoint>
         get() = jsonToGForcePoints(gForcePointsJson)
 }
-
-// Simple data classes for storage
-data class GpsPoint(
-    val lat: Double,
-    val lng: Double,
-    val timestamp: Long,
-    val speedKmh: Float?,
-    val accuracy: Float?
-)
-
-data class GForcePoint(
-    val timestamp: Long,
-    val lateralG: Float,
-    val longitudinalG: Float,
-    val scoreAtMoment: Int?
-)

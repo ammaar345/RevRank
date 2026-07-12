@@ -1,6 +1,6 @@
 package com.revrank.utils
 
-import com.revrank.data.local.entities.GpsPoint
+import com.revrank.domain.model.GpsPoint
 
 /**
  * Ramer-Douglas-Peucker algorithm for polyline simplification.

@@ -2,9 +2,7 @@ package com.revrank.presentation.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Trophy
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -65,12 +63,12 @@ fun EmptyState(
 
 object EmptyStates {
     val noTrips = Triple(
-        Icons.Filled.Speed,
+        RevRankIcons.Route,
         "NO TRIPS YET",
         "Take your first drive to get your score."
     )
     val noBadges = Triple(
-        Icons.Filled.Trophy,
+        RevRankIcons.Diamond,
         "NO BADGES YET",
         "Complete trips to earn your first badge."
     )

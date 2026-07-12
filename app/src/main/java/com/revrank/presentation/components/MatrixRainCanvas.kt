@@ -49,9 +49,8 @@ fun MatrixRainBackground(
 
     val infiniteTransition = rememberInfiniteTransition(label = "matrixRain")
 
-    val offsets = remember(columns.size) {
-        columns.mapIndexed { colIndex, col ->
-            infiniteTransition.animateFloat(
+    val offsets = columns.mapIndexed { colIndex, col ->
+        infiniteTransition.animateFloat(
                 initialValue = -200f,
                 targetValue = 2000f,
                 animationSpec = infiniteRepeatable(
@@ -63,8 +62,7 @@ fun MatrixRainBackground(
                     initialStartOffset = StartOffset(col.startOffset)
                 ),
                 label = "rainCol$colIndex"
-            )
-        }
+        )
     }
 
     val currentOffsets = offsets.map { it.value }

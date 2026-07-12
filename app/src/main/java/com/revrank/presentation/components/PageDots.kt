@@ -27,7 +27,7 @@ fun PageDots(
         repeat(totalDots) { index ->
             val isActive = index == activeIndex
             val color = if (isActive) MatrixGreen else Border
-            androidx.compose.foundation.Box(
+            androidx.compose.foundation.layout.Box(
                 modifier = Modifier
                     .size(8.dp)
                     .clip(CircleShape)

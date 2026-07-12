@@ -6,11 +6,12 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor() {
+class MainViewModel @Inject constructor() : ViewModel() {
 
     private val _pendingDeepLink = MutableStateFlow<Uri?>(null)
     val pendingDeepLink: StateFlow<Uri?> = _pendingDeepLink.asStateFlow()

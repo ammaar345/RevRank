@@ -20,3 +20,8 @@ output.json
 /reports/
 tripranked/
 references-*.png
+
+# local agent config + deprecated prototype
+.claude/
+tripranked.zip
+*.zip

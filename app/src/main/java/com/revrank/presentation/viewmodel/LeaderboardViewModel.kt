@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revrank.domain.model.LeaderboardEntry
 import com.revrank.domain.repository.LeaderboardRepository
+import com.revrank.presentation.statemanagement.LocalProStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,8 +27,10 @@ data class LeaderboardUiState(
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
     private val leaderboardRepository: LeaderboardRepository,
-    private val isProUser: () -> Boolean = { false } // injected / replaced in DI module
+    private val proStatus: LocalProStatus
 ) : ViewModel() {
+
+    private fun isProUser(): Boolean = proStatus.current.value
 
     private val _uiState = MutableStateFlow(LeaderboardUiState())
     val uiState: StateFlow<LeaderboardUiState> = _uiState.asStateFlow()
@@ -39,7 +42,7 @@ class LeaderboardViewModel @Inject constructor(
     /** Load both global and friends leaderboards on launch */
     fun loadLeaderboards() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, isPro = isProUser())
             try {
                 // Global
                 leaderboardRepository.getGlobalLeaderboard().collectLatest { global ->

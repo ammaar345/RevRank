@@ -1,8 +1,8 @@
 package com.revrank.data.repository
 
 import com.revrank.data.local.entities.TripEntity
-import com.revrank.data.local.entities.GpsPoint
-import com.revrank.data.local.entities.GForcePoint
+import com.revrank.domain.model.GForcePoint
+import com.revrank.domain.model.GpsPoint
 import com.revrank.domain.model.Trip
 import com.revrank.data.local.RevRankDatabase
 import com.revrank.data.local.dao.TripDao
@@ -73,7 +73,7 @@ class TripRepository @Inject constructor(
         
         // Check minimum distance: if less than 500m, delete the trip and return null
         if (trip.distanceKm < 0.5f) { // 0.5 km = 500 meters
-            tripDao.deleteTrip(trip)
+            tripDao.deleteTrip(trip.id)
             return null
         }
         
@@ -92,15 +92,11 @@ class TripRepository @Inject constructor(
             gForcePoints
         }
         
-        // Update the trip entity with the collected points
-        trip.setGpsPoints(trimmedGpsPoints)
-        trip.setGForcePoints(trimmedGForcePoints)
-        
         // Update timing and score
         val endTime = System.currentTimeMillis()
         val durationSec = (endTime - trip.startTime) / 1000
-        val avgSpeed = if (durationSec > 0) trip.distanceKm / (durationSec / 3600) else 0f
-        
+        val avgSpeed = if (durationSec > 0) trip.distanceKm / (durationSec / 3600f) else 0f
+
         val updated = trip.copy(
             endTime = endTime,
             score = finalScore.total,
@@ -109,7 +105,9 @@ class TripRepository @Inject constructor(
             scoreCornering = finalScore.cornering,
             scoreSmoothness = finalScore.smoothness,
             scoreConsistency = finalScore.consistency,
-            avgSpeedKmh = avgSpeed
+            avgSpeedKmh = avgSpeed,
+            gpsPointsJson = TripEntity.gpsPointsToJson(trimmedGpsPoints),
+            gForcePointsJson = TripEntity.gForcePointsToJson(trimmedGForcePoints)
         )
         
         // Persist the updated trip
@@ -157,9 +155,11 @@ class TripRepository @Inject constructor(
             gForcePoints
         }
         
-        trip.setGpsPoints(trimmedGpsPoints)
-        trip.setGForcePoints(trimmedGForcePoints)
-        tripDao.updateTrip(trip)
+        val updated = trip.copy(
+            gpsPointsJson = TripEntity.gpsPointsToJson(trimmedGpsPoints),
+            gForcePointsJson = TripEntity.gForcePointsToJson(trimmedGForcePoints)
+        )
+        tripDao.updateTrip(updated)
     }
 
     /**
@@ -176,9 +176,12 @@ class TripRepository @Inject constructor(
      * For free users, this should be limited in the UI layer (last 30 days, max 10 items).
      */
     fun getAllTripsForUserFlow(userId: String): Flow<List<Trip>> = tripDao.getTripsForUser(userId)
-        .map { list -> 
+        .map { list ->
             list.map { it.toDomain() }
         }
+
+    /** Push any locally-stored unsynced trips to Firestore. */
+    suspend fun syncUnsyncedTrips() = syncManager.syncUnsyncedTrips()
 }
 
 private fun TripEntity.toDomain() = Trip(
@@ -186,9 +189,10 @@ private fun TripEntity.toDomain() = Trip(
     userId = userId,
     startTime = startTime,
     endTime = endTime,
-    distanceKm = distanceKm,
-    maxSpeedKmh = maxSpeedKmh,
-    avgSpeedKmh = avgSpeedKmh,
+    distanceKm = distanceKm.toDouble(),
+    durationSec = ((endTime ?: startTime) - startTime) / 1000,
+    maxSpeedKmh = maxSpeedKmh.toDouble(),
+    avgSpeedKmh = avgSpeedKmh.toDouble(),
     score = score,
     scoreAcceleration = scoreAcceleration,
     scoreBraking = scoreBraking,

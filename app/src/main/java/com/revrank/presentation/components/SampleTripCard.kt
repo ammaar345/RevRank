@@ -80,7 +80,7 @@ fun SampleTripCard(
 @Composable
 fun SampleBadgeChip() {
     Row {
-        androidx.compose.foundation.Box(
+        androidx.compose.foundation.layout.Box(
             modifier = Modifier
                 .background(MatrixGreen, shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
                 .padding(horizontal = 8.dp, vertical = 4.dp)

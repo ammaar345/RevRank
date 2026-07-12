@@ -25,9 +25,10 @@ import kotlinx.coroutines.withContext
  */
 @Singleton
 class LeaderboardRepositoryImpl @Inject constructor(
-    private val db: FirebaseFirestore,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val db: FirebaseFirestore
 ) : LeaderboardRepository {
+
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
     companion object {
         private const val TOP_LIMIT = 100L

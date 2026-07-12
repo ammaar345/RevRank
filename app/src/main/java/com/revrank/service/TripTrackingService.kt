@@ -144,14 +144,6 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
     private fun updateGpsRequest(intervalMs: Long, minDistanceM: Float) {
         try {
             locationManager.removeUpdates(this)
-            val request = com.google.android.gms.location.LocationRequest.Builder(
-                com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
-                intervalMs
-            ).apply {
-                setMinUpdateDistanceMeters(minDistanceM)
-                setGranularity(android.location.Granularity.GRANULARITY_FINE)
-            }.build()
-
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
                 intervalMs,
@@ -260,9 +252,10 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
         }
     }
 
+    @Deprecated("Deprecated in API 29, still required by some devices")
     override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) {}
-    override fun onProviderEnabled(provider: String?) {}
-    override fun onProviderDisabled(provider: String?) {}
+    override fun onProviderEnabled(provider: String) {}
+    override fun onProviderDisabled(provider: String) {}
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {

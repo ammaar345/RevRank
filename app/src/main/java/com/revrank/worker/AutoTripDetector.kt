@@ -33,13 +33,15 @@ class AutoTripDetector @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
-            val activityClient = ActivityRecognition.getClient(applicationContext)
-            val task = activityClient.detectActivity()
-            val activityResult = com.google.android.gms.tasks.Tasks.await(task)
-
-            val mostProbable = activityResult?.mostProbableActivity()
-            val isInVehicle = mostProbable?.type == DetectedActivity.IN_VEHICLE &&
-                    (mostProbable?.confidence ?: 0) >= VEHICLE_CONFIDENCE_THRESHOLD
+            // TODO: wire real activity recognition (requestActivityTransitionUpdates with a
+            // PendingIntent receiver writing DetectedActivity to prefs). Play Services has no
+            // one-shot "detectActivity" poll; until the receiver lands this reads the last
+            // known state written by that receiver and defaults to not-in-vehicle.
+            val prefsEarly = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val lastDetectedType = prefsEarly.getInt("last_detected_activity", -1)
+            val lastConfidence = prefsEarly.getInt("last_detected_confidence", 0)
+            val isInVehicle = lastDetectedType == DetectedActivity.IN_VEHICLE &&
+                    lastConfidence >= VEHICLE_CONFIDENCE_THRESHOLD
 
             val prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val wasTracking = prefs.getBoolean(KEY_IS_TRACKING, false)
@@ -50,7 +52,7 @@ class AutoTripDetector @AssistedInject constructor(
                         applicationContext,
                         TripTrackingService::class.java
                     ).apply { action = TripTrackingService.ACTION_START }
-                    android.content.ContextCompat.startForegroundService(
+                    androidx.core.content.ContextCompat.startForegroundService(
                         applicationContext, intent
                     )
                     prefs.edit().putBoolean(KEY_IS_TRACKING, true).apply()
@@ -60,7 +62,7 @@ class AutoTripDetector @AssistedInject constructor(
                         applicationContext,
                         TripTrackingService::class.java
                     ).apply { action = TripTrackingService.ACTION_STOP }
-                    android.content.ContextCompat.startForegroundService(
+                    androidx.core.content.ContextCompat.startForegroundService(
                         applicationContext, intent
                     )
                     prefs.edit().putBoolean(KEY_IS_TRACKING, false).apply()

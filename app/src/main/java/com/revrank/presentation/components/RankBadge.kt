@@ -37,7 +37,7 @@ fun RankBadge(
         contentAlignment = Alignment.Center
     ) {
         // Using first letter of rank name as icon placeholder
-        Textuname.compose.material.MaterialText(
+        Text(
             text = rank.displayName.first().toString(),
             fontSize = (size.value * 0.4).sp,
             fontFamily = ShareTechMono,

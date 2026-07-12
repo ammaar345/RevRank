@@ -25,6 +25,10 @@ enum class BadgeType(
     SLOW_AND_STEADY("slow_and_steady", "Slow & Steady", "Avg speed under 40, score above 90"),
     WEEKEND_WARRIOR("weekend_warrior", "Weekend Warrior", "5 weekend trips");
 
+    /** Accent color for badge chips/grids (phosphor green placeholder until per-badge art lands). */
+    val color: androidx.compose.ui.graphics.Color
+        get() = androidx.compose.ui.graphics.Color(0xFF00FF66)
+
     companion object {
         fun fromId(id: String): BadgeType? = BadgeType.entries.firstOrNull { it.id == id }
     }

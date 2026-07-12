@@ -9,10 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +25,6 @@ import com.revrank.presentation.theme.*
 import com.revrank.presentation.viewmodel.LeaderboardUiState
 import com.revrank.presentation.viewmodel.LeaderboardViewModel
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun LeaderboardScreen(
     onBack: () -> Unit = {},
@@ -39,17 +34,10 @@ fun LeaderboardScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    // Pull-to-refresh state
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = uiState.isLoading,
-        onRefresh = { viewModel.refresh() }
-    )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Void)
-            .pullRefresh(pullRefreshState)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -120,15 +108,6 @@ fun LeaderboardScreen(
                 )
             }
         }
-
-        // Floating pull-refresh indicator (top centre)
-        PullRefreshIndicator(
-            refreshing = uiState.isLoading,
-            state = pullRefreshState,
-            modifier = Modifier.align(Alignment.TopCenter),
-            contentColor = MatrixGreen,
-            backgroundColor = Surface
-        )
     }
 }
 
@@ -276,6 +255,3 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
         )
     }
 }
-
-// Fix: Kotlin stdlib extension for temperature strings (placeholder, compiler may need actual import)
-private fun String.uppercaseTemperatureString(): String = this.uppercase()

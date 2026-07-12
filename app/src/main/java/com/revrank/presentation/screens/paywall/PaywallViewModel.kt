@@ -41,7 +41,7 @@ class PaywallViewModel @Inject constructor(
     init {
         loadOfferings()
         _uiState.update {
-            it.copy(isFirstEncounter = !PreferenceUtil.hasSeenPaywall)
+            it.copy(isFirstEncounter = !PreferenceUtil.hasSeenPaywall(context))
         }
     }
 
@@ -78,7 +78,7 @@ class PaywallViewModel @Inject constructor(
         _uiState.update { it.copy(isPurchasing = true, error = null) }
 
         // Mark first encounter seen
-        PreferenceUtil.hasSeenPaywall = true
+        PreferenceUtil.setHasSeenPaywall(context, true)
 
         viewModelScope.launch {
             val result = purchaseManager.purchasePackage(activity, pkg)
@@ -121,14 +121,16 @@ class PaywallViewModel @Inject constructor(
         val monthly = current.monthly
         val annual = current.annual
 
+        val monthlyPrice = monthly?.product?.price?.amountMicros?.div(1_000_000.0) ?: 3.99
+        val annualPrice = annual?.product?.price?.amountMicros?.div(1_000_000.0) ?: 24.99
         return PricingStrings(
-            monthlyLabel = monthly?.storeProduct?.priceFormatted ?: "$3.99/mo",
-            monthlyPrice = monthly?.storeProduct?.price ?: 3.99,
-            annualLabel = annual?.storeProduct?.priceFormatted ?: "$24.99/yr",
-            annualPrice = annual?.storeProduct?.price ?: 24.99,
+            monthlyLabel = monthly?.product?.price?.formatted ?: "$3.99/mo",
+            monthlyPrice = monthlyPrice,
+            annualLabel = annual?.product?.price?.formatted ?: "$24.99/yr",
+            annualPrice = annualPrice,
             annualSavings = calculateSavings(
-                monthlyPrice = monthly?.storeProduct?.price ?: 3.99,
-                annualPrice = annual?.storeProduct?.price ?: 24.99
+                monthlyPrice = monthlyPrice,
+                annualPrice = annualPrice
             )
         )
     }

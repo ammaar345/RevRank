@@ -1,284 +1,232 @@
 package com.revrank.presentation.screens.trips
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.LazyColumn
-import androidx.compose.foundation.ItemScope
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bumptech.glide.Glide
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.revrank.domain.model.Trip
-import com.revrank.presentation.theme.Color
-import com.revrank.presentation.theme.Type
-import com.revrank.presentation.viewmodel.trips.TripsViewModel
-import com.revrank.presentation.statemanagement.LocalProStatus
+import com.revrank.presentation.components.EmptyState
+import com.revrank.presentation.components.EmptyStates
 import com.revrank.presentation.components.ProGate
-import androidx.hilt.navigation.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.foundation.background
-import com.revrank.util.DateUtils
+import com.revrank.presentation.theme.MatrixGreen
+import com.revrank.presentation.theme.Rajdhani
+import com.revrank.presentation.theme.ShareTechMono
+import com.revrank.presentation.viewmodel.trips.TripsViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+private const val FREE_HISTORY_DAYS = 30L
+private const val FREE_HISTORY_MAX = 10
+
+/**
+ * Trip history list. Free users see the last 30 days (max 10 trips);
+ * Pro users get unlimited history.
+ */
 @Composable
 fun TripsScreen(
     viewModel: TripsViewModel = hiltViewModel(),
-    proStatus: LocalProStatus = LocalProStatusImpl()
+    onTripClick: (String) -> Unit = {},
+    onUpgradeClick: () -> Unit = {}
 ) {
-    val trips by viewModel.trips.collectAsStateWithLifecycle()
-    val isPro by proStatus.current.collectAsStateWithLifecycle()
+    val trips by viewModel.trips.collectAsState()
 
-    // Determine which trips to show based on Pro status
-    val displayedTrips = if (isPro) {
-        // Pro: show all trips, grouped by month (we'll implement grouping later)
-        trips
-    } else {
-        // Free: show only last 30 days, max 10 trips
-        val thirtyDaysAgo = System.currentTimeMillis() - (30 * 24 * 60 * 60 * 1000)
-        trips
-            .filter { it.startTime >= thirtyDaysAgo }
-            .take(10)
-    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        Text(
+            text = "TRIPS",
+            fontFamily = ShareTechMono,
+            fontSize = 18.sp,
+            color = Color.White,
+            letterSpacing = 2.sp,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+        )
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "My Trips",
-                        style = Type.TitleLarge,
-                        color = Color.White
-                    )
-                },
-                backgroundColor = Color(0xFF000000)
+        if (trips.isEmpty()) {
+            EmptyState(
+                icon = EmptyStates.noTrips.first,
+                headline = EmptyStates.noTrips.second,
+                subtext = EmptyStates.noTrips.third
             )
+            return@Column
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            if (trips.isEmpty()) {
-                // Empty state
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_directions_car),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(64.dp)
-                            .alpha(0.3f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No trips yet",
-                        style = Type.TitleMedium,
-                        color = Color(0xFF888888)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Go for a drive to start tracking your trips",
-                        style = Type.LabelLarge,
-                        color = Color(0xFF444444)
+
+        ProGate(
+            content = { TripsList(trips = trips, isPro = true, onTripClick = onTripClick) },
+            fallback = {
+                val thirtyDaysAgo =
+                    System.currentTimeMillis() - FREE_HISTORY_DAYS * 24 * 60 * 60 * 1000
+                val limited = trips
+                    .filter { it.startTime >= thirtyDaysAgo }
+                    .take(FREE_HISTORY_MAX)
+                Column {
+                    TripsList(
+                        trips = limited,
+                        isPro = false,
+                        onTripClick = onTripClick,
+                        footer = {
+                            FreeLimitFooter(
+                                shown = limited.size,
+                                total = trips.size,
+                                onUpgradeClick = onUpgradeClick
+                            )
+                        }
                     )
                 }
-            } else {
-                // Show trips list
-                if (!isPro && displayedTrips.size < trips.size) {
-                    // Show soft gate for free users
-                    ProGate(
-                        content = {
-                            TripsList(trips = displayedTrips, isPro = true)
-                        },
-                        fallback = {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            ) {
-                                Text(
-                                    text = "Unlimited Trip History",
-                                    style = Type.TitleMedium,
-                                    color = Color.White
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Upgrade to Pro to see all your trips with monthly grouping",
-                                    style = Type.LabelLarge,
-                                    color = Color(0xFF888888)
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                // Show limited trips anyway
-                                TripsList(trips = displayedTrips, isPro = false)
-                            }
-                        },
-                        proStatus = proStatus
-                    )
-                } else {
-                    TripsList(trips = displayedTrips, isPro = isPro)
-                }
             }
-        }
-    }
-}
-
-@Composable
-private fun TripsList(trips: List<Trip>, isPro: Boolean) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(tripList = trips) { trip ->
-            TripItem(trip = trip, isPro = isPro)
-        }
-        
-        // Show footer for free users indicating limit
-        if (!isPro && trips.size < 10) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Showing ${trips.size} of ${trips.size} recent trips (last 30 days)",
-                    style = Type.LabelSmall,
-                    color = Color(0xFF888888),
-                    textAlign = TextAlign.Center
-                )
-            }
-        } else if (!isPro && trips.size >= 10) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Showing 10 most recent trips (last 30 days)",
-                    style = Type.LabelSmall,
-                    color = Color(0xFF888888),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Upgrade to Pro for unlimited history",
-                    style = Type.LabelSmall,
-                    color = Color(0xFFFF2D00),
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TripItem(trip: Trip, isPro: Boolean) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .background(Color(0xFF0A0A0A))
-            .clickable { /* TODO: Navigate to trip detail */ },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Trip info
-        Column(
-            modifier = Modifier
-                .weight(1f)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = "${trip.distanceKm.formatDistance()}km",
-                    style = Type.TitleLarge,
-                    color = Color.White,
-                    fontFamily = "Share Tech Mono"
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "•",
-                    style = Type.TitleLarge,
-                    color = Color(0xFF444444)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "${trip.durationMin}min",
-                    style = Type.TitleLarge,
-                    color = Color.White,
-                    fontFamily = "Share Tech Mono"
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = DateUtils.formatDate(trip.startTime),
-                    style = Type.LabelLarge,
-                    color = Color(0xFF888888)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "•",
-                    style = Type.LabelLarge,
-                    color = Color(0xFF444444)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = trip.score.toString(),
-                    style = Type.TitleLarge,
-                    color = getScoreColor(trip.score),
-                    fontFamily = "Share Tech Mono"
-                )
-            }
-        }
-        
-        // Chevron indicator
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = "Next",
-            tint = Color(0xFF444444),
-            modifier = Modifier
-                .size(24.dp)
         )
     }
 }
 
-private fun ScoreColor(score: Int): Color {
-    return when {
-        score >= 90 -> Color(0xFF00FF41) // Green
-        score >= 75 -> Color(0xFF39FF14) // Lime
-        score >= 55 -> Color(0xFFFFD700) // Amber
-        score >= 35 -> Color(0xFFFF6B00) // Orange
-        else -> Color(0xFFFF2D00)        // Red
+@Composable
+private fun TripsList(
+    trips: List<Trip>,
+    isPro: Boolean,
+    onTripClick: (String) -> Unit,
+    footer: (@Composable () -> Unit)? = null
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            horizontal = 16.dp, vertical = 8.dp
+        )
+    ) {
+        items(trips, key = { it.id }) { trip ->
+            TripItem(trip = trip, onClick = { onTripClick(trip.id) })
+        }
+        if (footer != null) {
+            item { footer() }
+        }
     }
 }
 
-// Extension to format distance
-private fun Double.formatDistance(): String {
-    return if (this >= 1) {
-        "%.1f".format(this)
-    } else {
-        "${(this * 1000).toInt()}m"
+@Composable
+private fun FreeLimitFooter(shown: Int, total: Int, onUpgradeClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Showing $shown of $total trips (last $FREE_HISTORY_DAYS days)",
+            fontFamily = Rajdhani,
+            fontSize = 12.sp,
+            color = Color(0xFF888888),
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "UPGRADE TO PRO FOR UNLIMITED HISTORY",
+            fontFamily = ShareTechMono,
+            fontSize = 12.sp,
+            color = MatrixGreen,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.clickable { onUpgradeClick() }
+        )
     }
 }
 
-// Extension to format duration
-private fun Long.durationMin(): String {
-    val minutes = this / 60
-    return if (minutes >= 60) {
-        "${minutes / 60}h ${minutes % 60}min"
-    } else {
-        "$minutes min"
+@Composable
+private fun TripItem(trip: Trip, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF0A0A0A))
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row {
+                Text(
+                    text = "${formatDistance(trip.distanceKm)} km",
+                    fontFamily = ShareTechMono,
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "·",
+                    fontFamily = ShareTechMono,
+                    fontSize = 16.sp,
+                    color = Color(0xFF444444)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = formatDuration(trip),
+                    fontFamily = ShareTechMono,
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = formatDate(trip.startTime),
+                fontFamily = Rajdhani,
+                fontSize = 12.sp,
+                color = Color(0xFF888888)
+            )
+        }
+        Text(
+            text = trip.score.toString(),
+            fontFamily = ShareTechMono,
+            fontSize = 22.sp,
+            color = scoreColor(trip.score)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = "Open trip",
+            tint = Color(0xFF444444),
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
+
+private fun scoreColor(score: Int): Color = when {
+    score >= 90 -> Color(0xFF00FF41)
+    score >= 75 -> Color(0xFFADFF2F)
+    score >= 55 -> Color(0xFFFFD700)
+    score >= 35 -> Color(0xFFFF6B00)
+    else -> Color(0xFFFF453A)
+}
+
+private fun formatDistance(km: Double): String =
+    if (km >= 1) "%.1f".format(km) else "${(km * 1000).toInt()}m"
+
+private fun formatDuration(trip: Trip): String {
+    val minutes = ((trip.endTime ?: trip.startTime) - trip.startTime) / 1000 / 60
+    return if (minutes >= 60) "${minutes / 60}h ${minutes % 60}min" else "${minutes}min"
+}
+
+private fun formatDate(timestamp: Long): String =
+    SimpleDateFormat("MMM d · HH:mm", Locale.getDefault()).format(Date(timestamp))

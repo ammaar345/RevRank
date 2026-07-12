@@ -2,6 +2,7 @@ package com.revrank.presentation.screens.badge
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -54,11 +55,11 @@ fun BadgeEarnedOverlay(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.scale(scale)
         ) {
-            // Badge icon (placeholder - you can add a real icon)
-            Text(
-                text = "★",
-                fontSize = 96.sp,
-                color = MatrixGreen
+            Icon(
+                imageVector = com.revrank.presentation.components.RevRankIcons.Star,
+                contentDescription = null,
+                tint = MatrixGreen,
+                modifier = Modifier.size(96.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

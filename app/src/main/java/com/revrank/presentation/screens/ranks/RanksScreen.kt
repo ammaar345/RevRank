@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import com.revrank.domain.model.BadgeType
 import com.revrank.domain.model.Rank
 import com.revrank.presentation.components.RankBadge
@@ -124,11 +125,6 @@ private fun RankLadderItem(rank: Rank, isCurrent: Boolean, isCompleted: Boolean)
     val textColor = when {
         isCurrent -> rank.color
         isCompleted -> Color(0xFF888888)
- @Composable
-private fun RankLadderItem(rank: Rank, isCurrent: Boolean, isCompleted: Boolean) {
-    val textColor = when {
-        isCurrent -> rank.color
-        isCompleted -> Color(0xFF888888)
         else -> Color(0xFF444444)
     }
     val icon = when {
@@ -183,8 +179,8 @@ private fun RankLadderItem(rank: Rank, isCurrent: Boolean, isCompleted: Boolean)
 private fun BadgeGrid(badges: List<BadgeType>, onTap: (BadgeType) -> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(5),
-        horizontalArrangement = androidx.compose.foundation.layout.spacedArrangement(8.dp),
-        verticalArrangement = androidx.compose.foundation.layout.spacedArrangement(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         items(badges.size) { index ->
@@ -325,8 +321,8 @@ private fun RanksScreenPreview() {
         xp = 2000,
         badges = listOf(
             BadgeType.PERFECT_RUN,
-            BadgeType.NIGHT_DRIVER,
-            BadgeType.STREAK_7
+            BadgeType.NIGHT_RIDER,
+            BadgeType.WEEK_WARRIOR
         )
     )
 }

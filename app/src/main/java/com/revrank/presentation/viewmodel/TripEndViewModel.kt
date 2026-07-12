@@ -1,133 +1,88 @@
 package com.revrank.presentation.viewmodel
 
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import androidx.activity.contextAware
-import androidx.activity.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.revrank.domain.model.BadgeType
-import com.revrank.domain.model.Challenge
-import com.revrank.domain.model.RouteChallenge
-import com.revrank.domain.model.Trip
-import com.revrank.domain.model.User
-import com.revrank.domain.usecase.BadgeEvaluator
-import com.revrank.domain.model.XPCalculator
 import com.revrank.data.repository.ChallengeRepository
 import com.revrank.data.repository.TripRepository
 import com.revrank.data.repository.UserRepository
+import com.revrank.domain.model.BadgeType
+import com.revrank.domain.model.Rank
+import com.revrank.domain.model.Trip
+import com.revrank.domain.model.User
+import com.revrank.domain.model.XPCalculator
+import com.revrank.domain.usecase.BadgeEvaluator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
-import java.util.UUID
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
- * ViewModel for handling trip end logic: ending trips, awarding badges/XP, rank-up, sharing.
- * Also updates any pending challenge acceptances that match the trip's route.
+ * ViewModel for trip-end rewards: badges, XP, rank-up, and matching-challenge updates.
  */
 @HiltViewModel
 class TripEndViewModel @Inject constructor(
     private val tripRepository: TripRepository,
     private val userRepository: UserRepository,
     private val badgeEvaluator: BadgeEvaluator,
-    private val challengeRepository: ChallengeRepository // Added for challenge score updates
+    private val challengeRepository: ChallengeRepository
 ) : ViewModel() {
 
-    // Expose the ended trip for UI to collect
-    var endedTrip by mutableStateOf<Trip?>(null)
-        private set
+    private val _endedTrip = MutableStateFlow<Trip?>(null)
+    val endedTrip: StateFlow<Trip?> = _endedTrip.asStateFlow()
 
-    // UI state
-    var newBadges by mutableStateOf<listOf<BadgeType>> = emptyList()
-        private set
-    var xpGained by mutableStateOf<Int> = 0
-        private set
-    var newRank by mutableStateOf<String?>(null)
-        private set
-    var shareUri by mutableStateOf<android.net.Uri?>(null)
-        private set
+    private val _newBadges = MutableStateFlow<List<BadgeType>>(emptyList())
+    val newBadges: StateFlow<List<BadgeType>> = _newBadges.asStateFlow()
 
-    init {
-        // Listen for ended trips from repository (could also be triggered from LiveHudScreen)
+    private val _xpGained = MutableStateFlow(0)
+    val xpGained: StateFlow<Int> = _xpGained.asStateFlow()
+
+    private val _newRank = MutableStateFlow<String?>(null)
+    val newRank: StateFlow<String?> = _newRank.asStateFlow()
+
+    /** Call when a trip has ended to award badges/XP and update matching challenges. */
+    fun onTripEnded(trip: Trip, user: User) {
+        _endedTrip.value = trip
         viewModelScope.launch {
-            tripRepository.getEndedTripsFlow().collectLatest { trip -> 
-                if (trip != null) {
-                    handleTripEnded(trip)
-                }
+            val allTrips = tripRepository.getAllTripsForUserFlow(trip.userId).first()
+
+            // TODO: earned badges should be loaded from persistence once badge storage lands
+            val newlyEarned = badgeEvaluator.evaluate(trip, allTrips, emptyList())
+            _newBadges.value = newlyEarned
+
+            val streakBonus = badgeEvaluator.drivingStreak(allTrips)
+            val gained = XPCalculator.calculate(trip, streakBonus)
+            _xpGained.value = gained
+
+            val oldRank = Rank.fromXp(user.xp)
+            val updatedRank = Rank.fromXp(user.xp + gained)
+            if (updatedRank != oldRank) {
+                _newRank.value = updatedRank.displayName
             }
-        }
-    }
+            try {
+                userRepository.addXp(user.uid, gained)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
 
-    private fun handleTripEnded(trip: Trip) {
-        endedTrip = trip
-        val allTrips = tripRepository.getAllTripsForUser(trip.userId)
-        val currentUser = userRepository.getCurrentUser() ?: return
-        val existingBadges = currentUser.badges // Assume we store badge IDs as strings in User
-
-        // Evaluate new badges
-        val newlyEarned = badgeEvaluator.evaluate(trip, allTrips, existingBadges)
-        newBadges = newlyEarned
-
-        // Calculate XP (streak bonus from drivingStreak in BadgeEvaluator)
-        val streakBonus = badgeEvaluator.drivingStreak(allTrips)
-        xpGained = XPCalculator.calculate(trip, streakBonus)
-
-        // Award XP and check rank up
-        val updatedUser = currentUser.copy(
-            xp = currentUser.xp + xpGained,
-            badges = (currentUser.badges + newlyEarned.map { it.id }).distinct()
-        )
-        userRepository.updateUser(updatedUser)
-
-        val oldRank = currentUser.rank
-        val newRankObj = userRepository.getCurrentUser()?.rank ?: currentUser.rank
-        if (oldRank != newRankObj) {
-            newRank = newRankObj.displayName
-        }
-
-        // Update any challenge acceptances that match this trip's route
-        val routeHash = trip.computeRouteHash()
-        viewModelScope.launch {
+            // Update any pending challenge acceptances matching this trip's route
             try {
                 challengeRepository.updateChallengeScoreForTrip(
                     userId = trip.userId,
-                    routeHash = routeHash,
+                    routeHash = trip.computeRouteHash(),
                     score = trip.score
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
-                // Optionally, we could surface this error, but for now just log.
             }
         }
-
-        // Generate share card (non-blocking)
-        viewModelScope.launch {
-            try {
-                // This would be injected or use a helper; for now, assume we have access
-                val bitmap = com.revrank.presentation.screens.share.ShareCardGenerator.generate(trip, currentUser)
-                // Save to cache and get Uri via FileProvider (implementation omitted for brevity)
-                // shareUri = ... 
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    fun markTripAsShared(tripId: String) {
-        tripRepository.markTripAsShared(tripId)
-        // Refetch trip to update UI if needed
     }
 
     fun dismissReward() {
-        // Reset UI state if needed
-        newBadges = emptyList()
-        xpGained = 0
-        newRank = null
+        _newBadges.value = emptyList()
+        _xpGained.value = 0
+        _newRank.value = null
     }
 }

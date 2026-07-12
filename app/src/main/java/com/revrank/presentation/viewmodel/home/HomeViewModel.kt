@@ -7,11 +7,13 @@ import com.revrank.domain.model.Rank
 import com.revrank.domain.model.StreakSystem
 import com.revrank.domain.model.WeeklyChallenge
 import com.revrank.domain.usecase.WeeklyChallengeGenerator
+import com.revrank.presentation.screens.home.LastTripSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 
 @HiltViewModel
