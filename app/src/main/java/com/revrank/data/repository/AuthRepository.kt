@@ -22,23 +22,30 @@ class AuthRepository @Inject constructor(
             val result = auth.signInWithCredential(credential).await()
             val firebaseUser = result.user ?: throw Exception("Firebase auth returned null user")
 
-            val userDoc = firestore.collection("users").document(firebaseUser.uid).get().await()
-
-            if (!userDoc.exists()) {
-                val newUser = hashMapOf(
-                    "uid" to firebaseUser.uid,
-                    "email" to (firebaseUser.email ?: ""),
-                    "displayName" to (firebaseUser.displayName ?: "Driver"),
-                    "username" to (firebaseUser.displayName?.replace(" ", "_")?.lowercase() ?: "user_${System.currentTimeMillis()}"),
-                    "rank" to 1,
-                    "xp" to 0,
-                    "totalTrips" to 0,
-                    "totalDistanceKm" to 0.0,
-                    "streakDays" to 0,
-                    "isPro" to false,
-                    "createdAt" to System.currentTimeMillis()
-                )
-                firestore.collection("users").document(firebaseUser.uid).set(newUser).await()
+            // Provision the Firestore user doc, but never block sign-in on it —
+            // if Firestore is offline/unreachable the auth still succeeded, and
+            // the doc syncs later (offline persistence is enabled by default).
+            try {
+                val userDoc = firestore.collection("users").document(firebaseUser.uid).get().await()
+                if (!userDoc.exists()) {
+                    val newUser = hashMapOf(
+                        "uid" to firebaseUser.uid,
+                        "email" to (firebaseUser.email ?: ""),
+                        "displayName" to (firebaseUser.displayName ?: "Driver"),
+                        "username" to (firebaseUser.displayName?.replace(" ", "_")?.lowercase() ?: "user_${System.currentTimeMillis()}"),
+                        "rank" to 1,
+                        "xp" to 0,
+                        "totalTrips" to 0,
+                        "totalDistanceKm" to 0.0,
+                        "streakDays" to 0,
+                        "isPro" to false,
+                        "createdAt" to System.currentTimeMillis()
+                    )
+                    // Fire-and-forget: don't await, so an offline write can't fail sign-in.
+                    firestore.collection("users").document(firebaseUser.uid).set(newUser)
+                }
+            } catch (_: Exception) {
+                // Firestore unreachable — proceed with the authenticated user anyway.
             }
 
             Result.success(mapToUser(firebaseUser.uid))
