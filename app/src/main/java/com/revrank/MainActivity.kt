@@ -161,8 +161,7 @@ class MainActivity : ComponentActivity() {
                 exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tweenSpec) }
             ) {
                 SignInScreen(
-                    onGoogleSignIn = { navController.navigate(Screen.UsernamePicker.route) }, // TODO: real auth
-                    onAppleSignIn = { /* not supported on Android yet */ }
+                    onAuthenticated = { navController.navigate(Screen.UsernamePicker.route) }
                 )
             }
             composable(

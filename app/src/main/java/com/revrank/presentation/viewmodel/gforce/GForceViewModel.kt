@@ -3,6 +3,7 @@ package com.revrank.presentation.viewmodel.gforce
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.revrank.data.repository.SessionManager
 import com.revrank.data.repository.TripRepository
 import com.revrank.domain.model.Trip
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class GForceViewModel @Inject constructor(
     private val tripRepository: TripRepository,
+    private val session: SessionManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -29,7 +31,7 @@ class GForceViewModel @Inject constructor(
 
     private fun loadTrip(tripId: String) {
         viewModelScope.launch {
-            tripRepository.getAllTripsForUserFlow("current_user_id") // TODO: wire real userId from auth
+            tripRepository.getAllTripsForUserFlow(session.currentUserId)
                 .map { list -> list.firstOrNull { it.id == tripId } }
                 .collect { _trip.value = it }
         }
