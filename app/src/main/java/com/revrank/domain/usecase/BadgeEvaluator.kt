@@ -137,8 +137,8 @@ class BadgeEvaluator @Inject constructor() {
         var streak = 1
         var maxStreak = 1
         for (i in 1 until sortedTrips.size) {
-            val prevDate = java.util.Date(allTrips[sortedTrips.size - i].endTime!!)
-            val currDate = java.util.Date(allTrips[sortedTrips.size - (i - 1)].endTime!!)
+            val prevDate = java.util.Date(sortedTrips[i - 1].endTime!!)
+            val currDate = java.util.Date(sortedTrips[i].endTime!!)
             val prevCal = Calendar.getInstance().apply { time = prevDate }
             val currCal = Calendar.getInstance().apply { time = currDate }
             // Check if currCal is the next day of prevCal

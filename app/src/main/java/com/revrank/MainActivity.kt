@@ -141,15 +141,28 @@ class MainActivity : ComponentActivity() {
                 )
                 justEndedTrip != null -> {
                     val ended = justEndedTrip!!
-                    com.revrank.presentation.screens.score.TripEndScreen(
-                        trip = ended,
-                        user = com.revrank.domain.model.User(
+                    val tripEndViewModel: com.revrank.presentation.viewmodel.TripEndViewModel = hiltViewModel()
+                    val user = androidx.compose.runtime.remember(ended.id) {
+                        com.revrank.domain.model.User(
                             uid = ended.userId,
                             username = "You",
                             displayName = "You",
                             lastTripDate = ended.endTime
-                        ),
-                        onViewHistory = { tripViewModel.clearEndedTrip() },
+                        )
+                    }
+                    // Award XP / evaluate badges / rank-up for the finalized trip.
+                    LaunchedEffect(ended.id) { tripEndViewModel.onTripEnded(ended, user) }
+                    val xpGained by tripEndViewModel.xpGained.collectAsState()
+                    val newBadges by tripEndViewModel.newBadges.collectAsState()
+                    com.revrank.presentation.screens.score.TripEndScreen(
+                        trip = ended,
+                        user = user,
+                        newBadges = newBadges,
+                        xpGained = xpGained,
+                        onViewHistory = {
+                            tripEndViewModel.dismissReward()
+                            tripViewModel.clearEndedTrip()
+                        },
                         onBadgeDismissed = { tripViewModel.clearEndedTrip() }
                     )
                 }

@@ -73,8 +73,7 @@ private fun RouteReplayContent(
                 modifier = Modifier.align(Alignment.Center)
             )
         }
-        return
-    }
+    } else {
 
     // TODO: Implement actual map view with Google Maps Compose or Android View
     // For now, placeholder UI
@@ -192,5 +191,6 @@ private fun RouteReplayContent(
                     }
                 }
         }
+    }
     }
 }
