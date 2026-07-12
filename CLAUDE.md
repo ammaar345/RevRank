@@ -1,5 +1,41 @@
 # RevRank — Project Context
 
+---
+
+## ⏩ SESSION RESUME — START HERE (updated 2026-07-12)
+
+**One-line status:** App **builds AND runs on the emulator** end-to-end (onboarding → home → bottom nav). Real Firebase config is wired. Next task = **wire real Google Sign-In code** (the button is still stubbed — it just navigates, doesn't authenticate).
+
+**To continue, sneaky can just say e.g. "wire the google sign-in" or "run it on the emulator" or "keep improving screens."**
+
+### Where things stand
+- ✅ First successful build ever (fixed 616 → 0 compile errors + Dagger graph). Branch `feature/build-fixes-reskin-emulator-test` pushed → **PR #1** (https://github.com/ammaar345/RevRank/pull/1), not yet merged to master.
+- ✅ Design re-skinned to CRT terminal baseline: real fonts (JetBrains Mono/VT323/Orbitron/Rajdhani — were 0-byte files), phosphor `#00FF66`, sharp 2px terminal buttons (no pills), bottom nav shell (`presentation/navigation/MainShell.kt`), redesigned SignInScreen, splash-theme handoff.
+- ✅ Emulator-verified: full onboarding flow works. Fixed a launch crash (`launch_screen.xml`) + a "Drive NaN km" bug.
+- ✅ 25 JVM unit tests pass (`app/src/test/`).
+- ✅ Debug demo-data seeder (`data/local/DemoData.kt`, userId `current_user_id`) so screens have content offline.
+- ✅ **Real `google-services.json` in `app/`** — project `revrank-cc0fc`, package `com.revrank`, BOTH oauth_clients (Android type-1 + Web type-3), Google auth provider enabled, SHA-1 registered. File is **gitignored (stays local, never pushed)**. Firestore/Storage/Analytics/Crashlytics all wired to the real project.
+
+### Immediate next task: real Google Sign-In (Firebase side is DONE, code side is NOT)
+- SignInScreen `onGoogleSignIn` currently just `navController.navigate(UsernamePicker)` — no auth. Need: Google Sign-In (`play-services-auth` already in build.gradle) using the **Web client ID** `37242091998-bjsniaabgsmndmiebt9utdbhgg72goji.apps.googleusercontent.com` → exchange token with `FirebaseAuth` → feed real `uid` into ViewModels (they hardcode `current_user_id` / `current_user`).
+- Also still stubbed: onboarding-complete flag not persisted (DataStore) so reinstall replays onboarding; badge persistence; RouteReplay Google Map; auto-trip-detection receiver.
+
+### Build & run commands (host has NO Android Studio; toolchain on D:)
+```bash
+export JAVA_HOME=/d/android-build/jdk/jdk-17.0.19+10
+export GRADLE_USER_HOME=/d/android-build/gradle-home   # C: is full — MUST use D:
+export ANDROID_HOME=/d/android-build/sdk
+cd /d/BlueprintAgents/problem-research/tripRankReplica
+/d/android-build/gradle/gradle-8.7/bin/gradle.bat :app:assembleDebug --console=plain
+```
+- **`<Error module>` trap:** kapt hides all Kotlin type errors behind one line. To see real errors: add `-x :app:kaptGenerateStubsDebugKotlin -x :app:kaptDebugKotlin`.
+- **Emulator:** `export ANDROID_AVD_HOME=/d/android-build/avd` then `/d/android-build/sdk/emulator/emulator.exe -avd revrank_test -no-window -no-audio -gpu swiftshader_indirect -no-snapshot` (background). adb = `/d/android-build/sdk/platform-tools/adb.exe`. In Git Bash prefix device-path commands with `MSYS_NO_PATHCONV=1` (else `/sdcard/x` mangles). Install: `adb install -r app/build/outputs/apk/debug/app-debug.apk`; launch `adb shell am start -n com.revrank/.MainActivity`; screenshot `adb shell screencap -p /sdcard/s.png && adb pull /sdcard/s.png ./s.png`. Reinstall wipes onboarding (in-memory flag) → replay the flow.
+- **Debug SHA-1** (already in Firebase): `5E:3B:FD:21:65:A3:C0:10:44:02:B3:70:C1:D5:9C:F4:00:16:52:5B`.
+
+### Still user-only (not code): Maps API key + RevenueCat key — see `SETUP.md`. Firebase is complete.
+
+---
+
 **Status**: Branch 09 (Polish) completed. **July 11, 2026: all design screens re-skinned to the CRT terminal baseline** (sign-in page is the reference — see Design Rules). Android toolchain installed on host; first build verification in progress.
 **App Name**: RevRank (ride score & rank — motorcycle-first, cars welcome)
 **Tech Stack**: Kotlin, Jetpack Compose, Hilt, Room, Firebase, RevenueCat.
