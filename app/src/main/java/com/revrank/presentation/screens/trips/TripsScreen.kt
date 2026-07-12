@@ -171,7 +171,7 @@ private fun TripItem(trip: Trip, onClick: () -> Unit) {
         Column(modifier = Modifier.weight(1f)) {
             Row {
                 Text(
-                    text = "${formatDistance(trip.distanceKm)} km",
+                    text = formatDistance(trip.distanceKm),
                     fontFamily = ShareTechMono,
                     fontSize = 16.sp,
                     color = Color.White
@@ -224,7 +224,7 @@ private fun scoreColor(score: Int): Color = when {
 }
 
 private fun formatDistance(km: Double): String =
-    if (km >= 1) "%.1f".format(km) else "${(km * 1000).toInt()}m"
+    if (km >= 1) "%.1f km".format(km) else "${(km * 1000).toInt()} m"
 
 private fun formatDuration(trip: Trip): String {
     val minutes = ((trip.endTime ?: trip.startTime) - trip.startTime) / 1000 / 60

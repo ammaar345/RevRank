@@ -1,5 +1,6 @@
 package com.revrank.presentation.navigation
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -20,10 +21,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.revrank.presentation.components.RevRankIcons
+import com.revrank.service.TripTrackingService
 import com.revrank.presentation.screens.home.HomeScreen
 import com.revrank.presentation.screens.profile.ProfileScreen
 import com.revrank.presentation.screens.ranks.RanksScreen
@@ -55,6 +59,7 @@ fun MainShell(
         )
     }
     var selected by rememberSaveable { mutableIntStateOf(0) }
+    val context = LocalContext.current
 
     Scaffold(
         containerColor = Void,
@@ -105,7 +110,12 @@ fun MainShell(
                         weeklyKm = uiState.weeklyKm,
                         challenges = uiState.challenges,
                         lastTrip = uiState.lastTrip,
-                        onStartTrip = { /* TODO: start TripTrackingService */ },
+                        onStartTrip = {
+                            val startIntent = Intent(context, TripTrackingService::class.java).apply {
+                                action = TripTrackingService.ACTION_START
+                            }
+                            ContextCompat.startForegroundService(context, startIntent)
+                        },
                         onViewRanks = { selected = 2 },
                         onViewTrip = onOpenTrip
                     )

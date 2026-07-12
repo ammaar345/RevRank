@@ -33,17 +33,30 @@ class PurchaseManager @Inject constructor() {
 
     /** Emits true when Pro entitlement is active, false otherwise. */
     val isProFlow: Flow<Boolean> = callbackFlow {
+        // RevenueCat may not be configured (e.g. no API key yet) — treat as not
+        // Pro rather than crashing on Purchases.sharedInstance.
+        if (!Purchases.isConfigured) {
+            trySend(false)
+            awaitClose { }
+            return@callbackFlow
+        }
         val listener = UpdatedCustomerInfoListener { info: CustomerInfo ->
             trySend(info.entitlements["pro"]?.isActive == true)
         }
-        Purchases.sharedInstance.updatedCustomerInfoListener = listener
-        // Emit current state immediately
-        Purchases.sharedInstance.getCustomerInfoWith(
-            onError = { trySend(false) },
-            onSuccess = { info -> trySend(info.entitlements["pro"]?.isActive == true) }
-        )
+        try {
+            Purchases.sharedInstance.updatedCustomerInfoListener = listener
+            // Emit current state immediately
+            Purchases.sharedInstance.getCustomerInfoWith(
+                onError = { trySend(false) },
+                onSuccess = { info -> trySend(info.entitlements["pro"]?.isActive == true) }
+            )
+        } catch (e: Exception) {
+            trySend(false)
+        }
         awaitClose {
-            Purchases.sharedInstance.updatedCustomerInfoListener = null
+            try {
+                Purchases.sharedInstance.updatedCustomerInfoListener = null
+            } catch (_: Exception) {}
         }
     }.distinctUntilChanged()
 

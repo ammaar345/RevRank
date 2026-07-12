@@ -130,6 +130,27 @@ class TripRepository @Inject constructor(
     }
 
     /**
+     * Persist live distance / speed / score onto the active trip while tracking,
+     * so the final endTrip() sees the real distance (its < 500m guard reads the
+     * row's distanceKm).
+     */
+    suspend fun updateTripProgress(
+        tripId: String,
+        distanceKm: Float,
+        maxSpeedKmh: Float,
+        score: Int
+    ) {
+        val trip = tripDao.getTripById(tripId) ?: return
+        tripDao.updateTrip(
+            trip.copy(
+                distanceKm = distanceKm,
+                maxSpeedKmh = maxOf(trip.maxSpeedKmh, maxSpeedKmh),
+                score = score
+            )
+        )
+    }
+
+    /**
      * Update the stored GPS and G-force points for a trip.
      * Called periodically during tracking to avoid losing data if the app is killed.
      */

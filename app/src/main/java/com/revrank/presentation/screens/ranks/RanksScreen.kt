@@ -18,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.revrank.domain.model.BadgeType
 import com.revrank.domain.model.Rank
 import com.revrank.presentation.components.RankBadge
+import com.revrank.presentation.components.TerminalScaffold
 import com.revrank.presentation.theme.MatrixGreen
 import com.revrank.presentation.theme.Rajdhani
 import com.revrank.presentation.theme.ShareTechMono
@@ -32,13 +33,14 @@ fun RanksScreen(
     badges: List<BadgeType>,
     onBadgeTap: (BadgeType) -> Unit = {}
 ) {
+    TerminalScaffold(screenId = "RANK") {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
-            .padding(horizontal = 20.dp)
+            .systemBarsPadding()
+            .padding(horizontal = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(48.dp))
 
         // ─── CURRENT RANK CARD ───
         CurrentRankCard(rank = currentRank, xp = xp)
@@ -80,6 +82,7 @@ fun RanksScreen(
 
         // ─── BADGE GRID ───
         BadgeGrid(badges = badges, onTap = onBadgeTap)
+    }
     }
 }
 

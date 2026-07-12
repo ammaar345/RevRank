@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.revrank.domain.model.DrivingQuality
+import com.revrank.presentation.components.TerminalScaffold
 import com.revrank.presentation.theme.MatrixGreen
 import com.revrank.presentation.theme.Rajdhani
 import com.revrank.presentation.theme.ShareTechMono
@@ -58,11 +59,7 @@ fun LiveHudScreen(
         DrivingQuality.AGGRESSIVE -> Color(0xFFFF453A)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
+    TerminalScaffold(screenId = "LIVE // TRACKING") {
         // Quality-tinted glow behind the speed readout
         Box(
             modifier = Modifier

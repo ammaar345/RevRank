@@ -61,9 +61,15 @@ class LatLngKalmanFilter(
             val trustRatio = (jumpDist / MAX_JUMP_METERS).coerceIn(1.0, 5.0)
             val adjustedAccuracy = accuracyM * trustRatio
 
-            // Option: reject outright if absurd (> 200m)
+            // A single sample > 200m away means either a GPS glitch or that the
+            // estimate has diverged / there was a long gap. Re-acquire on the new
+            // fix instead of permanently freezing (the old code returned the stale
+            // estimate forever, so distance stopped accumulating).
             if (jumpDist > 200.0) {
-                return Pair(lat, lng)  // keep previous estimate
+                lat = newLat
+                lng = newLng
+                variance = accuracyM * accuracyM
+                return Pair(lat, lng)
             }
 
             // Update with adjusted noise

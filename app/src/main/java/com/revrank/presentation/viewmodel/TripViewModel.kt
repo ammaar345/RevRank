@@ -2,6 +2,7 @@ package com.revrank.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.revrank.data.repository.SessionManager
 import com.revrank.data.repository.TripRepository
 import com.revrank.domain.model.Trip
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,10 +14,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TripViewModel @Inject constructor(
-    private val tripRepository: TripRepository
+    private val tripRepository: TripRepository,
+    session: SessionManager
 ) : ViewModel() {
 
-    private val _activeTrip = tripRepository.getActiveTripFlow(com.revrank.data.local.DemoData.DEMO_USER_ID) // TODO: real userId from auth
+    private val _activeTrip = tripRepository.getActiveTripFlow(session.currentUserId)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

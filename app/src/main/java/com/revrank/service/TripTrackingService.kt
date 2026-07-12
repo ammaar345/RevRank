@@ -21,11 +21,14 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.revrank.MainActivity
 import com.revrank.R
+import com.revrank.data.repository.SessionManager
+import com.revrank.data.repository.TripRepository
 import com.revrank.data.repository.TripTrackingRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -34,6 +37,13 @@ import javax.inject.Inject
 class TripTrackingService : Service(), LocationListener, SensorEventListener {
 
     @Inject lateinit var trackingRepository: TripTrackingRepository
+    @Inject lateinit var tripRepository: TripRepository
+    @Inject lateinit var session: SessionManager
+
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var activeTripId: String? = null
+    private var tripStarted = false
+    private var lastProgressPersistMs = 0L
 
     companion object {
         const val ACTION_START = "com.revrank.ACTION_START"
@@ -73,8 +83,8 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
         intent?.action?.let {
             when (it) {
                 ACTION_START -> startTracking()
-                ACTION_STOP -> stopTracking()
-                ACTION_END_TRIP -> endTrip()
+                ACTION_STOP -> finalizeTrip()
+                ACTION_END_TRIP -> finalizeTrip()
             }
         }
         return START_STICKY
@@ -84,6 +94,15 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
         if (isTracking) return
         isTracking = true
         networkSeedObtained = false
+        tripStarted = false
+
+        // Create the active trip row (endTime == null) so isTripActive flips and
+        // the Live HUD appears.
+        serviceScope.launch {
+            val trip = tripRepository.startTrip(session.currentUserId)
+            activeTripId = trip.id
+            Log.d(TAG, "Active trip created: ${trip.id} for user=${session.currentUserId}")
+        }
 
         startForeground(NOTIF_ID, buildNotification())
 
@@ -142,13 +161,17 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
 
     /** Updates GPS request with new interval and min distance. */
     private fun updateGpsRequest(intervalMs: Long, minDistanceM: Float) {
+        // Deliver callbacks on the main looper — this is also called from the
+        // speed-adjust IO coroutine, which has no Looper of its own.
+        val looper = android.os.Looper.getMainLooper()
         try {
             locationManager.removeUpdates(this)
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
                 intervalMs,
                 minDistanceM,
-                this
+                this,
+                looper
             )
             gpsIntervalMs = intervalMs
             gpsMinDistanceM = minDistanceM
@@ -160,7 +183,8 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
                 LocationManager.GPS_PROVIDER,
                 intervalMs,
                 minDistanceM,
-                this
+                this,
+                looper
             )
         }
     }
@@ -171,12 +195,12 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
         val minDist: Float
         when {
             currentSpeedKmh < 5f -> {
-                interval = 30_000L  // stationary: every 30s
-                minDist = 50f
+                interval = 3_000L   // near-stationary: still refresh the live HUD every 3s
+                minDist = 5f
             }
             currentSpeedKmh < 30f -> {
-                interval = 5_000L   // slow: every 5s
-                minDist = 10f
+                interval = 2_000L   // slow: every 2s
+                minDist = 5f
             }
             else -> {
                 interval = 1_000L   // moving fast: every 1s
@@ -189,44 +213,71 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
         }
     }
 
-    private fun stopTracking() {
+    /** Stop sensors/GPS but don't touch the trip row. */
+    private fun stopSensors() {
         isTracking = false
         speedUpdateJob?.cancel()
         speedUpdateJob = null
-        stopForeground(true)
         try {
             locationManager.removeUpdates(this)
             sensorManager.unregisterListener(this)
         } catch (_: Exception) {}
-        wakeLock?.let {
-            if (it.isHeld) it.release()
-        }
+        wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
-        stopSelf()
     }
 
-    private fun endTrip() {
-        stopTracking()
-        // Notify UI to navigate to trip end screen
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("END_TRIP", true)
+    /**
+     * End the trip: persist final distance + score breakdown + collected points
+     * to the active trip row (which sets endTime, flipping isTripActive false so
+     * the HUD closes), then stop the service.
+     */
+    private fun finalizeTrip() {
+        if (!isTracking && activeTripId == null) {
+            stopForeground(true); stopSelf(); return
         }
-        PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        stopSensors()
+        val id = activeTripId
+        activeTripId = null
+        if (id == null) {
+            stopForeground(true); stopSelf(); return
+        }
+        serviceScope.launch {
+            try {
+                tripRepository.updateTripProgress(
+                    tripId = id,
+                    distanceKm = trackingRepository.distanceKm.value.toFloat(),
+                    maxSpeedKmh = currentSpeedKmh,
+                    score = trackingRepository.currentScore.value
+                )
+                tripRepository.endTrip(
+                    tripId = id,
+                    finalScore = trackingRepository.scoreBreakdown.value,
+                    gpsPoints = trackingRepository.getGpsPoints(),
+                    gForcePoints = trackingRepository.getGForcePoints()
+                )
+                trackingRepository.clearPointBuffers()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to finalize trip", e)
+            } finally {
+                stopForeground(true)
+                stopSelf()
+            }
+        }
     }
 
     override fun onLocationChanged(location: Location) {
-        // Filter bad accuracy readings
-        if (location.accuracy > 25f) return
+        // Filter bad accuracy readings (mock fixes on the emulator report 0)
+        if (location.accuracy > 0f && location.accuracy > 25f) return
 
         // Update current speed for adaptive interval
         if (location.hasSpeed()) {
             currentSpeedKmh = location.speed * 3.6f
+        }
+
+        // First real fix: seed the live-tracking repository's baseline.
+        if (!tripStarted) {
+            trackingRepository.startTrip(location.latitude, location.longitude)
+            tripStarted = true
         }
 
         trackingRepository.onLocationChanged(
@@ -234,6 +285,25 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
             location.longitude,
             location.accuracy
         )
+        Log.d(TAG, "loc ${location.latitude},${location.longitude} acc=${location.accuracy} dist=${"%.3f".format(trackingRepository.distanceKm.value)}km")
+
+        // Persist live distance/score onto the active trip (throttled to ~2s) so
+        // the final endTrip() sees the accumulated distance.
+        val nowMs = System.currentTimeMillis()
+        if (nowMs - lastProgressPersistMs > 2000) {
+            lastProgressPersistMs = nowMs
+            val id = activeTripId
+            if (id != null) {
+                serviceScope.launch {
+                    tripRepository.updateTripProgress(
+                        tripId = id,
+                        distanceKm = trackingRepository.distanceKm.value.toFloat(),
+                        maxSpeedKmh = currentSpeedKmh,
+                        score = trackingRepository.currentScore.value
+                    )
+                }
+            }
+        }
 
         // Stationary detection
         val now = System.currentTimeMillis()
@@ -248,7 +318,7 @@ class TripTrackingService : Service(), LocationListener, SensorEventListener {
             }
         }
         if (now - lastLocationTime > STATIONARY_THRESHOLD_MS) {
-            endTrip()
+            finalizeTrip()
         }
     }
 
