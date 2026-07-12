@@ -39,4 +39,12 @@ class UserRepository @Inject constructor() {
         // Commit the batch
         batch.commit().await()
     }
+
+    /** Adds XP to a user's Firestore document. */
+    suspend fun addXp(uid: String, amount: Int) {
+        if (uid.isBlank() || amount <= 0) return
+        db.collection("users").document(uid)
+            .update("xp", FieldValue.increment(amount.toLong()))
+            .await()
+    }
 }

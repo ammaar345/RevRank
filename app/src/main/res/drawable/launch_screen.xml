@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <item name="background" type="drawable">@android:color/black</item>
-</resources>
+<!-- Splash / windowBackground for the launch theme: black field with the
+     RevRank mark centered. Must be a real drawable (was a malformed
+     <resources> file, which crashed launch with Resources$NotFoundException). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/black" />
+    <item
+        android:width="120dp"
+        android:height="120dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_launcher_foreground" />
+</layer-list>

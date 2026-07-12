@@ -1,232 +1,180 @@
 package com.revrank.presentation.screens.profile
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.bumptech.glide.request.RequestOptions
-import com.revrank.R
-import com.revrank.domain.model.User
-import com.revrank.presentation.theme.*
-import com.revrank.presentation.viewmodel.PublicProfileUiState
+import com.revrank.domain.model.Rank
+import com.revrank.presentation.theme.MatrixGreen
+import com.revrank.presentation.theme.Rajdhani
+import com.revrank.presentation.theme.ShareTechMono
 import com.revrank.presentation.viewmodel.PublicProfileViewModel
-import com.revrank.presentation.viewmodel.ShareLinkUtils
-import com.revrank.presentation.viewmodel.ViewModelUtils.viewModel
-import dagger.hilt.android.androidEntryPoint
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterialApi::class)
+/**
+ * Public profile reached via reverank.app/profile/{username} deep links.
+ */
 @Composable
 fun PublicProfileScreen(
     username: String,
-    onBack: () -> Unit = {},
-    viewModel: PublicProfileViewModel = hiltViewModel()
+    viewModel: PublicProfileViewModel = hiltViewModel(),
+    onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    viewModel.lifecycleScope.launchWhenStarted {
-        viewModel.loadUserByUsername(username)
-    }
+    val context = LocalContext.current
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "@$username",
-                        fontFamily = Rajdhani,
-                        fontSize = 20.sp,
-                        color = TextPrimary
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MatrixGreen
-                        )
-                    }
-                },
-                backgroundColor = Void,
-                containerColor = Void
+    LaunchedEffect(username) { viewModel.loadUserByUsername(username) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+            }
+            Text(
+                text = "PROFILE",
+                fontFamily = ShareTechMono,
+                fontSize = 18.sp,
+                color = Color.White,
+                letterSpacing = 2.sp
             )
         }
-    ) { padding ->
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(Void),
+
+        val user = uiState.user
+        when {
+            uiState.isLoading -> Box(
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(color = MatrixGreen)
+                CircularProgressIndicator(color = MatrixGreen, strokeWidth = 2.dp)
             }
-        } else if (uiState.user == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(Void),
+
+            user == null -> Box(
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "User not found",
-                    fontFamily = Rajdhani,
-                    fontSize = 16.sp,
-                    color = TextSecondary
-                )
-            }
-        } else {
-            val user = uiState.user!!
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(Void),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Avatar with rank-colored border
-                Box(
-                    modifier = Modifier
-                        .size(96.dp)
-                        .background(
-                            RoundedCircleShape(
-                                start = user.rankColorHex?.let { Color.parseColor(it) } ?: MatrixGreen
-                            )
-                        )
-                ) {
-                    // Placeholder for avatar image (if we had URLs, we'd load with Glide/Coil)
-                    // For now, we show initials
-                    Text(
-                        text = user.username.first().uppercase(),
-                        fontFamily = ShareTechMono,
-                        fontSize = 32.sp,
-                        color = Color.Black,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Username and display name
-                Text(
-                    text = user.username,
+                    text = uiState.errorMessage ?: "USER NOT FOUND",
                     fontFamily = ShareTechMono,
-                    fontSize = 24.sp,
-                    color = TextPrimary
+                    fontSize = 14.sp,
+                    color = Color(0xFF888888)
                 )
-                if (user.displayName != user.username) {
-                    Text(
-                        text = user.displayName,
-                        fontFamily = Rajdhani,
-                        fontSize = 16.sp,
-                        color = TextSecondary
-                    )
-                }
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Rank badge and XP
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+            else -> {
+                val rank = Rank.entries.getOrNull(user.rank - 1) ?: Rank.LEARNER
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Rank badge (small square with rank color)
+                    // Avatar initial
                     Box(
                         modifier = Modifier
-                            .size(24.dp)
-                            .background(
-                                user.rankColorHex?.let { Color.parseColor(it) } ?: MatrixGreen
-                            )
+                            .size(88.dp)
+                            .background(rank.color.copy(alpha = 0.12f))
+                            .border(1.5.dp, rank.color),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = user.rank.toString(),
+                            text = user.username.take(1).uppercase(),
                             fontFamily = ShareTechMono,
-                            fontSize = 10.sp,
-                            color = Color.Black,
-                            modifier = Modifier.align(Alignment.Center)
+                            fontSize = 36.sp,
+                            color = rank.color
                         )
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Level ${user.rank}",
-                        fontFamily = Rajdhani,
-                        fontSize = 14.sp,
-                        color = TextPrimary
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = "${user.xp} XP",
+                        text = "@${user.username}",
                         fontFamily = ShareTechMono,
-                        fontSize = 14.sp,
-                        color = MatrixGreen
+                        fontSize = 22.sp,
+                        color = Color.White
                     )
-                }
+                    Text(
+                        text = rank.displayName.uppercase(),
+                        fontFamily = ShareTechMono,
+                        fontSize = 13.sp,
+                        color = rank.color,
+                        letterSpacing = 2.sp
+                    )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
-                // Stats row: avg trips, km, etc. (simplified)
-                Row(
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 32.dp)
-                ) {
-                    StatItem(label = "TRIPS", value = "${user.totalTrips}")
-                    Stat(label = "DISTANCE", value = "${user.totalDistanceKm} km")
-                    Stat(label = "STREAK", value = "${user.streakDays} days")
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Action buttons: Challenge and Share
-                Row(
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Challenge button (only if not viewing own profile? we'll show for now)
-                    Button(
-                        onClick = {
-                            // TODO: Navigate to challenge creation with this user as target
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MatrixGreen),
-                        shape = MaterialTheme.shapes.small
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Text(
-                            text = "CHALLENGE",
-                            fontFamily = Rajdhani,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
+                        ProfileStat(value = user.xp.toString(), label = "XP")
+                        ProfileStat(value = user.totalTrips.toString(), label = "TRIPS")
+                        ProfileStat(
+                            value = "%.0f".format(user.totalDistanceKm),
+                            label = "KM"
                         )
+                        ProfileStat(value = user.streakDays.toString(), label = "STREAK")
                     }
-                    // Share button
+
+                    Spacer(modifier = Modifier.height(40.dp))
+
                     Button(
                         onClick = {
-                            ShareLinkUtils.shareProfileLink(username = user.username)
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(
+                                    Intent.EXTRA_TEXT,
+                                    "Check out @${user.username} on RevRank — reverank.app/profile/${user.username}"
+                                )
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Share profile"))
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        shape = MaterialTheme.shapes.small,
-                        border = BorderStroke(2.dp, MatrixGreen)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MatrixGreen
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, MatrixGreen),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(2.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = "SHARE PROFILE",
-                            fontFamily = Rajdhani,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MatrixGreen
+                            fontFamily = ShareTechMono,
+                            fontSize = 14.sp,
+                            letterSpacing = 2.sp
                         )
                     }
                 }
@@ -236,43 +184,20 @@ fun PublicProfileScreen(
 }
 
 @Composable
-private fun Stat(label: String, value: String) {
+private fun ProfileStat(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,
             fontFamily = ShareTechMono,
-            fontSize = 18.sp,
-            color = TextPrimary
+            fontSize = 22.sp,
+            color = Color.White
         )
         Text(
             text = label,
             fontFamily = Rajdhani,
-            fontSize = 12.sp,
-            color = TextSecondary
+            fontSize = 11.sp,
+            color = Color(0xFF888888),
+            letterSpacing = 1.sp
         )
     }
-}
-
-/**
- * Helper shape for a circle with a colored border (the border is the background color of the Box).
- * We achieve this by having a Box with the border color as background, and then a smaller
- * inner Box with the surface color (or image) on top.
- * However, for simplicity, we are using a single color circle for the background and then
- * putting the initials on top. In a real app, we would load an image and overlay a ring.
- */
-private class RoundedCircleShape(private val borderColor: Color) : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ): Outline = Outline.Generic(
-        Path().apply {
-            addOval(
-                left = 0f,
-                top = 0f,
-                right = size.width,
-                bottom = size.height
-            )
-        }
-    )
 }

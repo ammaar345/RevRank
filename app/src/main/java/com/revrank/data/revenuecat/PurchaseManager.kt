@@ -4,12 +4,15 @@ import android.app.Activity
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.Offerings
 import com.revenuecat.purchases.Package
+import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesError
 import com.revenuecat.purchases.getCustomerInfoWith
 import com.revenuecat.purchases.getOfferingsWith
-import com.revenuecat.purchases.models.StoreProduct
+import com.revenuecat.purchases.interfaces.UpdatedCustomerInfoListener
+import com.revenuecat.purchases.models.StoreTransaction
 import com.revenuecat.purchases.purchaseWith
+import com.revenuecat.purchases.restorePurchasesWith
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -30,17 +33,17 @@ class PurchaseManager @Inject constructor() {
 
     /** Emits true when Pro entitlement is active, false otherwise. */
     val isProFlow: Flow<Boolean> = callbackFlow {
-        val listener = { info: CustomerInfo ->
+        val listener = UpdatedCustomerInfoListener { info: CustomerInfo ->
             trySend(info.entitlements["pro"]?.isActive == true)
         }
-        Purchases.sharedInstance.addCustomerInfoUpdateListener(listener)
+        Purchases.sharedInstance.updatedCustomerInfoListener = listener
         // Emit current state immediately
         Purchases.sharedInstance.getCustomerInfoWith(
             onError = { trySend(false) },
-            onSuccess = { listener(it) }
+            onSuccess = { info -> trySend(info.entitlements["pro"]?.isActive == true) }
         )
         awaitClose {
-            // RevenueCat SDK manages listener lifecycle; no explicit remove needed
+            Purchases.sharedInstance.updatedCustomerInfoListener = null
         }
     }.distinctUntilChanged()
 
@@ -62,22 +65,18 @@ class PurchaseManager @Inject constructor() {
         packageToPurchase: Package
     ): PurchaseResult = suspendCancellableCoroutine { cont ->
         Purchases.sharedInstance.purchaseWith(
-            activity = activity,
-            packageToPurchase = packageToPurchase,
-            onError = { error: PurchasesError, _: Boolean ->
+            purchaseParams = PurchaseParams.Builder(activity, packageToPurchase).build(),
+            onError = { error: PurchasesError, userCancelled: Boolean ->
                 if (cont.isActive) {
-                    val result = when (error.code) {
-                        com.revenuecat.purchases.PurchasesErrorCode.PurchaseCancelledError -> {
-                            PurchaseResult.Cancelled
-                        }
-                        else -> PurchaseResult.Error(
-                            error.message ?: "Purchase failed"
-                        )
+                    val result = if (userCancelled) {
+                        PurchaseResult.Cancelled
+                    } else {
+                        PurchaseResult.Error(error.message)
                     }
                     cont.resume(result) { }
                 }
             },
-            onSuccess = { _: StoreProduct ->
+            onSuccess = { _: StoreTransaction?, _: CustomerInfo ->
                 if (cont.isActive) cont.resume(PurchaseResult.Success) { }
             }
         )

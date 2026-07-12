@@ -1,8 +1,9 @@
 package com.revrank.presentation.screens.score
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -12,22 +13,22 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
 import com.revrank.domain.model.BadgeType
 import com.revrank.domain.model.Trip
 import com.revrank.domain.model.User
@@ -40,9 +41,9 @@ import com.revrank.presentation.components.CircularScoreProgress
 import com.revrank.presentation.theme.MatrixGreen
 import com.revrank.presentation.theme.Rajdhani
 import com.revrank.presentation.theme.ShareTechMono
+import com.revrank.presentation.viewmodel.challenge.ChallengeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.min
 
 @Composable
 fun TripEndScreen(
@@ -98,9 +99,7 @@ fun TripEndScreen(
             val link = "reverank.app/challenge/$challengeId"
             shareLink(link, context)
             // Clear the challenge state to avoid re-sharing on recomposition
-            viewModelScope.launch {
-                challengeViewModel.clearChallenge()
-            }
+            challengeViewModel.clearChallenge()
         }
     }
 
@@ -109,10 +108,8 @@ fun TripEndScreen(
         if (createError != null) {
             Toast.makeText(context, createError, Toast.LENGTH_SHORT).show()
             // Clear error after showing
-            viewModelScope.launch {
-                delay(3000)
-                challengeViewModel.clearError()
-            }
+            delay(3000)
+            challengeViewModel.clearError()
         }
     }
 
@@ -157,7 +154,7 @@ fun TripEndScreen(
                         strokeWidth = 8.dp,
                         glowColor = gradeColor,
                         trackColor = Color(0xFF222222),
-                        durationMs = when (phase) { 1 -> 1200 else -> 0 }
+                        durationMs = if (phase == 1) 1200 else 0
                     )
                 }
             }
@@ -221,7 +218,7 @@ fun TripEndScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                    border = ButtonDefaults.outlinedButtonBorder().copy(width = 2.dp, brush = Brush.solidColor(MatrixGreen)),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, SolidColor(MatrixGreen)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("SHARE", color = MatrixGreen, fontFamily = Rajdhani, fontSize = 18.sp)
@@ -231,19 +228,13 @@ fun TripEndScreen(
 
                 Button(
                     onClick = {
-                        viewModelScope.launch {
-                            try {
-                                challengeViewModel.createChallenge(trip, user)
-                                // The LaunchedEffect above will handle sharing once the challenge is created
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                // Error will be caught by the challengeViewModel.error StateFlow and shown via LaunchedEffect
-                            }
-                        }
+                        // Sharing happens in the LaunchedEffect once the challenge is created;
+                        // errors surface via the error StateFlow.
+                        challengeViewModel.createChallenge(trip, user)
                     },
                     enabled = !isCreating,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                    border = ButtonDefaults.outlinedButtonBorder().copy(width = 2.dp, brush = Brush.solidColor(MatrixGreen)),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, SolidColor(MatrixGreen)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (isCreating) {
@@ -272,21 +263,14 @@ fun TripEndScreen(
 }
 
 // Helper function to share a link via implicit intent
-@Composable
 private fun shareLink(link: String, context: Context) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, link)
     }
-    val chooser = Intent.createChooser(intent, "Share via")
     if (intent.resolveActivity(context.packageManager) != null) {
-        ContextCompat.startActivity(
-            context,
-            Intent.createChooser(intent, "Share via"),
-            null
-        )
+        context.startActivity(Intent.createChooser(intent, "Share via"))
     }
-}
 }
 
 @Composable
@@ -350,29 +334,25 @@ private fun TripEndScreenPreview() {
         userId = "user-1",
         startTime = System.currentTimeMillis() - 1800000,
         endTime = System.currentTimeMillis(),
-        distanceKm = 14.2f,
-        maxSpeedKmh = 95f,
-        avgSpeedKmh = 48f,
+        distanceKm = 14.2,
+        maxSpeedKmh = 95.0,
+        avgSpeedKmh = 48.0,
         score = 84,
         scoreAcceleration = 82,
         scoreBraking = 88,
         scoreCornering = 79,
         scoreSmoothness = 90,
         scoreConsistency = 85,
-        routeName = null,
         shareImagePath = null
     )
     val previewUser = com.revrank.domain.model.User(
-        id = "user-1",
+        uid = "user-1",
         username = "TestUser",
-        email = "test@test.com",
         displayName = "Test User",
-        vehicleType = "CAR",
         xp = 1200,
-        rank = com.revrank.domain.model.Rank.CAPTAIN,
-        badges = emptyList(),
-        isPro = false,
-        createdAt = System.currentTimeMillis()
+        rank = 3,
+        lastTripDate = System.currentTimeMillis(),
+        isPro = false
     )
     TripEndScreen(
         trip = previewTrip,

@@ -54,13 +54,13 @@ fun ScoreCategoryBar(
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
-        androidx.compose.foundation.Box(
+        androidx.compose.foundation.layout.Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(4.dp)
                 .background(Void)
         ) {
-            androidx.compose.foundation.Box(
+            androidx.compose.foundation.layout.Box(
                 modifier = Modifier
                     .fillMaxWidth(fillFraction)
                     .height(4.dp)

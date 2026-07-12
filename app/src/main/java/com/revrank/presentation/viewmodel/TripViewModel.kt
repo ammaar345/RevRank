@@ -5,9 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.revrank.data.repository.TripRepository
 import com.revrank.domain.model.Trip
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.updateAndGet
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
@@ -15,10 +16,10 @@ class TripViewModel @Inject constructor(
     private val tripRepository: TripRepository
 ) : ViewModel() {
 
-    private val _activeTrip = tripRepository.getActiveTripFlow(/* userId */ "current_user") // In real app, get from auth
+    private val _activeTrip = tripRepository.getActiveTripFlow(com.revrank.data.local.DemoData.DEMO_USER_ID) // TODO: real userId from auth
         .stateIn(
             scope = viewModelScope,
-            started = androidx.lifecycle.SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
         )
     val activeTrip: StateFlow<Trip?> = _activeTrip
@@ -26,7 +27,7 @@ class TripViewModel @Inject constructor(
     // Expose a Flow for whether a trip is active (non-null)
     val isTripActive: StateFlow<Boolean> = activeTrip.map { it != null }.stateIn(
         scope = viewModelScope,
-        started = androidx.lifecycle.SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.WhileSubscribed(5000),
         initialValue = false
     )
 }

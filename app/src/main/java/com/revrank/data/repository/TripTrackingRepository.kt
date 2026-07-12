@@ -1,20 +1,17 @@
 package com.revrank.data.repository
 
 import android.content.Context
-import androidx.lifecycle.MutableStateFlow
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.revrank.data.local.entities.GpsPoint
-import com.revrank.data.local.entities.GForcePoint
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.revrank.domain.model.GForcePoint
+import com.revrank.domain.model.GpsPoint
 import com.revrank.domain.model.DrivingQuality
 import com.revrank.utils.LatLngKalmanFilter
 import com.revrank.utils.TripScoreCalculator
 import com.revrank.utils.TripScoreCalculator.SensorWindow
 import com.revrank.utils.TripScoreCalculator.ScoreBreakdown
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,7 +22,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class TripTrackingRepository @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
     private val _currentSpeed = MutableStateFlow(0.0)
     val currentSpeed: StateFlow<Double> = _currentSpeed.asStateFlow()
@@ -130,7 +127,7 @@ class TripTrackingRepository @Inject constructor(
             lat = filteredLat,
             lng = filteredLng,
             timestamp = now,
-            speedKmh = _currentSpeed.value,
+            speedKmh = _currentSpeed.value.toFloat(),
             accuracy = accuracy
         )
         gpsPointsBuffer.add(gpsPoint)
@@ -150,7 +147,7 @@ class TripTrackingRepository @Inject constructor(
         // Assuming device mounted in car: X = forward, Y = lateral, Z = vertical
         accelBuffer.add(accelX)
         lateralBuffer.add(accelY)
-        speedBuffer.add(_currentSpeed.value)
+        speedBuffer.add(_currentSpeed.value.toFloat())
 
         if (accelBuffer.size > 25) {
             accelBuffer.removeAt(0)
@@ -197,12 +194,12 @@ class TripTrackingRepository @Inject constructor(
 
     /** Get the collected GPS points for route replay */
     fun getGpsPoints(): List<GpsPoint> {
-        return List(gpsPointsBuffer)
+        return gpsPointsBuffer.toList()
     }
 
     /** Get the collected G-force points for G-force visualizer */
     fun getGForcePoints(): List<GForcePoint> {
-        return List(gForcePointsBuffer)
+        return gForcePointsBuffer.toList()
     }
 
     /** Clear the point buffers (called after trip is ended and points are persisted) */

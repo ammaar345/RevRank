@@ -2,6 +2,7 @@ package com.revrank.utils
 
 import kotlin.math.abs
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
@@ -28,10 +29,10 @@ class TripScoreCalculator {
         val braking: Int,
         val cornering: Int,
         val smoothness: Int,
-        val consistency: Int,
-        val hardBrakingCount: Int,
-        val hardAccelCount: Int,
-        val hardCorneringCount: Int
+        val consistency: Int = 0,
+        val hardBrakingCount: Int = 0,
+        val hardAccelCount: Int = 0,
+        val hardCorneringCount: Int = 0
     )
 
     /**
@@ -127,7 +128,7 @@ class TripScoreCalculator {
         // Consistency = how close speeds stay to average
         // 0 variance -> 100, high variance -> 0
         // Normalize: assume max reasonable variance is (10 m/s)^2 = 100
-        val normalized = 1.0f - (variance / 100.0f).coerceIn(0.0f, 1.0f)
+        val normalized = 1.0 - (variance / 100.0).coerceIn(0.0, 1.0)
         return (normalized * 100).toInt()
     }
 

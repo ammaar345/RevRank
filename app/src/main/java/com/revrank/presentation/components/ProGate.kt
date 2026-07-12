@@ -24,15 +24,12 @@ fun ProGate(
     },
     proStatus: LocalProStatus? = null
 ) {
+    val appContext = LocalContext.current.applicationContext
     val resolvedProStatus = remember(proStatus) {
-        proStatus ?: run {
-            val context = LocalContext.current.applicationContext
-            val entryPoint = EntryPointAccessors.fromApplication(
-                context,
-                ProGateEntryPoint::class.java
-            )
-            entryPoint.proStatus()
-        }
+        proStatus ?: EntryPointAccessors.fromApplication(
+            appContext,
+            ProGateEntryPoint::class.java
+        ).proStatus()
     }
     val isPro by resolvedProStatus.current.collectAsState(initial = false)
     if (isPro) content() else fallback()

@@ -19,8 +19,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.revrank.presentation.theme.MatrixGreen
-import com.revrank.presentation.theme.ShareTechMono
-import kotlinx.coroutines.delay
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Particle burst effect for badge earned animation.
@@ -42,15 +42,11 @@ fun ParticleBurst(
         }
     }
 
-    var animationProgress by remember { mutableFloatStateOf(0f) }
-    val animatedProgress = animateFloatAsState(
+    val animationProgress by animateFloatAsState(
         targetValue = 1f,
-        animationSpec = tween(durationMillis = 800, easing = LinearEasing)
-    ).targetState
-
-    LaunchedEffect(Unit) {
-        animationProgress = 1f
-    }
+        animationSpec = tween(durationMillis = 800, easing = LinearEasing),
+        label = "particleBurst"
+    )
 
     Box(modifier = modifier
         .drawBehind {

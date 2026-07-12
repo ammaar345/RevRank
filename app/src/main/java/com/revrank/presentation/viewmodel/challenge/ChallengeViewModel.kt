@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -24,6 +25,9 @@ class ChallengeViewModel @Inject constructor(
 
     private val _isAccepting = MutableStateFlow(false)
     val isAccepting: StateFlow<Boolean> = _isAccepting.asStateFlow()
+
+    private val _isAccepted = MutableStateFlow(false)
+    val isAccepted: StateFlow<Boolean> = _isAccepted.asStateFlow()
 
     private val _isCreated = MutableStateFlow(false)
     val isCreated: StateFlow<Boolean> = _isCreated.asStateFlow()
@@ -118,5 +122,11 @@ class ChallengeViewModel @Inject constructor(
     // Clear errors
     fun clearError() {
         _error.value = null
+    }
+
+    /** Clear the created/loaded challenge (e.g. after its link has been shared). */
+    fun clearChallenge() {
+        _challenge.value = null
+        _isCreated.value = false
     }
 }

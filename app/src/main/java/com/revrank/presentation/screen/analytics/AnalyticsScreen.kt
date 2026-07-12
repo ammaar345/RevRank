@@ -1,194 +1,232 @@
 package com.revrank.presentation.screen.analytics
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.revrank.presentation.theme.Color
-import com.revrank.presentation.theme.Type
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.revrank.domain.model.Trip
+import com.revrank.presentation.theme.MatrixGreen
+import com.revrank.presentation.theme.Rajdhani
+import com.revrank.presentation.theme.ShareTechMono
+import com.revrank.presentation.viewmodel.analytics.AnalyticsViewModel
 
 /**
- * Analytics screen with three tabs: SCORES, DISTANCE, CATEGORIES.
- * Each tab shows a placeholder chart (to be replaced with actual charting library).
+ * Analytics screen (Pro): SCORES / DISTANCE / CATEGORIES tabs.
+ * Charts are simple Compose placeholders until a charting library lands.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
-    viewModel: AnalyticsViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    selectedTab: String = "Scores",
-    onTabSelected: (String) -> Unit = {}
+    viewModel: AnalyticsViewModel = hiltViewModel(),
+    onBack: () -> Unit = {}
 ) {
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Analytics",
-                        style = Type.TitleLarge,
-                        color = Color.White
-                    )
-                },
-                backgroundColor = Color(0xFF000000),
-                scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val trips by viewModel.trips.collectAsState()
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("SCORES", "DISTANCE", "CATEGORIES")
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+            }
+            Text(
+                text = "ANALYTICS",
+                fontFamily = ShareTechMono,
+                fontSize = 18.sp,
+                color = Color.White,
+                letterSpacing = 2.sp
             )
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+
+        TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = Color.Black,
+            contentColor = MatrixGreen
         ) {
-            // Tab Row
-            TabRow(
-                selectedIndex = when (selectedTab) {
-                    "Scores" -> 0
-                    "Distance" -> 1
-                    "Categories" -> 2
-                    else -> 0
-                },
-                indicator = { tabPositions ->
-                    TabRowDefaults.DrawerIndicator(
-                        color = Color(0xFF00FF41), // MatrixGreen
-                        thickness = 2.dp
-                    )
-                },
-                contentColor = Color.White,
-                indicatorContainerColor = Color.Transparent
+            tabs.forEachIndexed { index, label ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = {
+                        Text(
+                            text = label,
+                            fontFamily = Rajdhani,
+                            fontSize = 13.sp,
+                            color = if (selectedTab == index) MatrixGreen else Color(0xFF888888)
+                        )
+                    }
+                )
+            }
+        }
+
+        when (selectedTab) {
+            0 -> ScoresTab(trips)
+            1 -> DistanceTab(trips)
+            2 -> CategoriesTab(trips)
+        }
+    }
+}
+
+@Composable
+private fun ScoresTab(trips: List<Trip>) {
+    val recent = trips.filter { it.endTime != null }.takeLast(14)
+    ChartFrame(title = "SCORE TREND — LAST ${recent.size} TRIPS") {
+        BarPlaceholder(values = recent.map { it.score / 100f }, color = MatrixGreen)
+    }
+}
+
+@Composable
+private fun DistanceTab(trips: List<Trip>) {
+    val recent = trips.filter { it.endTime != null }.takeLast(14)
+    val maxKm = (recent.maxOfOrNull { it.distanceKm } ?: 1.0).coerceAtLeast(1.0)
+    ChartFrame(title = "DISTANCE PER TRIP (KM)") {
+        BarPlaceholder(
+            values = recent.map { (it.distanceKm / maxKm).toFloat() },
+            color = Color(0xFF00B4D8)
+        )
+    }
+}
+
+@Composable
+private fun CategoriesTab(trips: List<Trip>) {
+    val done = trips.filter { it.endTime != null }
+    val categories = listOf(
+        "ACCELERATION" to done.map { it.scoreAcceleration }.averageOrZero(),
+        "BRAKING" to done.map { it.scoreBraking }.averageOrZero(),
+        "CORNERING" to done.map { it.scoreCornering }.averageOrZero(),
+        "SMOOTHNESS" to done.map { it.scoreSmoothness }.averageOrZero(),
+        "CONSISTENCY" to done.map { it.scoreConsistency }.averageOrZero()
+    )
+    Column(modifier = Modifier.padding(16.dp)) {
+        categories.forEach { (label, avg) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Tab(
-                    text = { Text("SCORES", style = Type.LabelMedium) },
-                    selected = selectedTab == "Scores",
-                    onClick = { onTabSelected("Scores") }
+                Text(
+                    text = label,
+                    fontFamily = Rajdhani,
+                    fontSize = 12.sp,
+                    color = Color(0xFF888888),
+                    modifier = Modifier.width(110.dp)
                 )
-                Divider(color = Color(0xFF1E1E1E), thickness = 1.dp)
-                Tab(
-                    text = { Text("DISTANCE", style = Type.LabelMedium) },
-                    selected = selectedTab == "Distance",
-                    onClick = { onTabSelected("Distance") }
-                )
-                Divider(color = Color(0xFF1E1E1E), thickness = 1.dp)
-                Tab(
-                    text = { Text("CATEGORIES", style = Type.LabelMedium) },
-                    selected = selectedTab == "Categories",
-                    onClick = { onTabSelected("Categories") }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(5.dp)
+                        .background(Color(0xFF222222))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth((avg / 100f).coerceIn(0f, 1f))
+                            .height(5.dp)
+                            .background(MatrixGreen)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = avg.toInt().toString(),
+                    fontFamily = ShareTechMono,
+                    fontSize = 12.sp,
+                    color = Color.White
                 )
             }
-
-            // Content
-            when (selectedTab) {
-                "Scores" -> ScoresTabContent()
-                "Distance" -> DistanceTabContent()
-                "Categories" -> CategoriesTabContent()
-            }
         }
     }
 }
 
 @Composable
-fun ScoresTabContent() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+private fun ChartFrame(title: String, content: @Composable () -> Unit) {
+    Column(modifier = Modifier.padding(16.dp)) {
         Text(
-            text = "Scores Trend",
-            style = Type.TitleMedium,
-            color = Color.White
+            text = title,
+            fontFamily = ShareTechMono,
+            fontSize = 10.sp,
+            color = Color(0xFF888888),
+            letterSpacing = 1.sp
         )
-        // Placeholder for line chart (last 30 trips)
+        Spacer(modifier = Modifier.height(12.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .background(Color(0xFF111111), shape = RectangleShape)
+                .height(180.dp)
+                .background(Color(0xFF0A0A0A))
+                .border(1.dp, Color(0xFF1E3A2A))
+                .padding(12.dp)
         ) {
-            Text(
-                text = "Line Chart: Score over last 30 trips\n(Moving average overlay)",
-                color = Color(0xFF888888),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center)
-            )
+            content()
         }
-        Text(
-            text = "Tap a point to see trip summary tooltip",
-            style = Type.LabelSmall,
-            color = Color(0xFF888888)
-        )
     }
 }
 
 @Composable
-fun DistanceTabContent() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Distance Heatmap",
-            style = Type.TitleMedium,
-            color = Color.White
-        )
-        // Placeholder for calendar heatmap
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .background(Color(0xFF111111), shape = RectangleShape)
-        ) {
+private fun BarPlaceholder(values: List<Float>, color: Color) {
+    if (values.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = "Calendar Heatmap: Last 3 months\nEach day = distance driven",
-                color = Color(0xFF888888),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center)
+                text = "NO TRIP DATA YET",
+                fontFamily = ShareTechMono,
+                fontSize = 11.sp,
+                color = Color(0xFF555555)
             )
         }
-        Text(
-            text = "Tap a day to see trips that day",
-            style = Type.LabelSmall,
-            color = Color(0xFF888888)
-        )
+        return
+    }
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        values.forEach { v ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .height((160 * v.coerceIn(0.05f, 1f)).dp)
+                    .background(color.copy(alpha = 0.75f))
+            )
+        }
     }
 }
 
-@Composable
-fun CategoriesTabContent() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Driving Categories Radar",
-            style = Type.TitleMedium,
-            color = Color.White
-        )
-        // Placeholder for radar chart
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp)
-                .background(Color(0xFF111111), shape = RectangleShape)
-        ) {
-            Text(
-                text = "Radar Chart: 5 axes\n(acceleration/braking/cornering/smoothness/consistency)\nCurrent month vs All time",
-                color = Color(0xFF888888),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-        Text(
-            text = "Shows two polygons: current month (green) and all time (dim white)",
-            style = Type.LabelSmall,
-            color = Color(0xFF888888)
-        )
-    }
-}
+private fun List<Int>.averageOrZero(): Float =
+    if (isEmpty()) 0f else (sum().toFloat() / size)

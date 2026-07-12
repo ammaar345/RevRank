@@ -1,5 +1,7 @@
 package com.revrank.domain.model
 
+import kotlin.math.roundToInt
+
 /**
  * Domain model representing a trip.
  * Includes GPS points and G-force points for Pro features (route replay and G-force visualizer).
@@ -7,15 +9,18 @@ package com.revrank.domain.model
 data class Trip(
     val id: String,
     val userId: String,
-    val vehicleType: VehicleType,
+    val vehicleType: VehicleType = VehicleType.CAR,
     val startTime: Long,
     val endTime: Long?,
-    val startLat: Double,
-    val startLng: Double,
-    val endLat: Double,
-    val endLng: Double,
+    val startLat: Double = 0.0,
+    val startLng: Double = 0.0,
+    val endLat: Double = 0.0,
+    val endLng: Double = 0.0,
     val distanceKm: Double,
-    val durationSec: Long,
+    val durationSec: Long = 0,
+    val maxSpeedKmh: Double = 0.0,
+    val avgSpeedKmh: Double = 0.0,
+    val routeName: String? = null,
     val score: Int,
     val scoreAcceleration: Int,
     val scoreBraking: Int,

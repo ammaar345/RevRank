@@ -27,9 +27,11 @@ class WeeklyChallengeGenerator @Inject constructor() {
             completed = false
         )
 
-        // Challenge 2: Distance goal scaled to user's average
-        val avgDist = recentTrips.filter { it.endTime != null }.map { it.distanceKm }.average().toFloat()
-        val targetKm = (avgDist * 1.2f + 10f).coerceAtLeast(25f) // Minimum 25km
+        // Challenge 2: Distance goal scaled to user's average.
+        // Guard against an empty trip list (average() of empty = NaN → "Drive NaN km").
+        val distances = recentTrips.filter { it.endTime != null }.map { it.distanceKm }
+        val avgDist = if (distances.isEmpty()) 0.0 else distances.average()
+        val targetKm = (avgDist * 1.2 + 10.0).coerceAtLeast(25.0).toFloat() // Minimum 25km
         val c2 = WeeklyChallenge(
             id = UUID.randomUUID().toString(),
             type = ChallengeType.DistanceGoal(targetKm),
@@ -38,7 +40,6 @@ class WeeklyChallengeGenerator @Inject constructor() {
             xpReward = 75,
             progress = 0f,
             completed = false
-       ined next line)
         )
 
         // Challenge 3: Beat personal best OR streak goal

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.revrank.presentation.screens.gforce
 
 import androidx.compose.foundation.Canvas
@@ -22,17 +24,16 @@ import com.revrank.domain.model.GForcePoint
 import com.revrank.presentation.components.ProGate
 import com.revrank.presentation.screens.paywall.ProUpsellBanner
 import com.revrank.presentation.theme.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import com.revrank.presentation.viewmodel.gforce.GForceViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.hilt.navigation.hiltViewModel
-import kotlin.math.roundToInt
+import androidx.hilt.navigation.compose.hiltViewModel
 
 /**
  * G-Force Visualizer Screen (Pro feature)
  * Shows a radar chart of lateral vs longitudinal G-forces over the trip,
  * with color-coded points by score and summary statistics.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GForceScreen(
     tripId: String,
@@ -69,13 +70,13 @@ private fun GForceContent(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("G-Force Visualizer", style = Type.TitleLarge, color = Color.White) },
+                title = { Text("G-Force Visualizer", style = RevRankTypography.titleLarge, color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { onDismiss() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                backgroundColor = Color(0xFF000000)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF000000))
             )
         }
     ) { padding ->
@@ -117,13 +118,13 @@ private fun GForceContent(
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "No G-force data available",
-                            style = Type.TitleMedium,
+                            style = RevRankTypography.titleMedium,
                             color = Color(0xFF888888)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Drive more to collect data",
-                            style = Type.LabelLarge,
+                            style = RevRankTypography.labelLarge,
                             color = Color(0xFF444444)
                         )
                     }
@@ -156,35 +157,36 @@ private fun GForceContent(
                         ) {
                             Text(
                                 text = "MAX G-FORCES",
-                                style = Type.LabelSmall,
+                                style = RevRankTypography.labelSmall,
                                 color = Color(0xFF888888)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Lateral: ${"%.1f".format(getMaxLateralG(gForcePoints))}g",
-                                style = Type.TitleMedium,
+                                style = RevRankTypography.titleMedium,
                                 color = Color.White
                             )
                             Text(
                                 text = "Longitudinal: ${"%.1f".format(getMaxLongitudinalG(gForcePoints))}g",
-                                style = Type.TitleMedium,
+                                style = RevRankTypography.titleMedium,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = "TIME IN SAFE ZONE",
-                                style = Type.LabelSmall,
+                                style = RevRankTypography.labelSmall,
                                 color = Color(0xFF888888)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "${getSafeZonePercentage(gForcePoints)}%",
-                                style = Type.TitleMedium,
+                                style = RevRankTypography.titleMedium,
                                 color = Color(0xFF00FF41)
                             )
                         }
                     }
                 }
+            }
         }
     }
 }
@@ -204,10 +206,10 @@ private fun GForceChart(
         val canvasSize = size
         val centerX = canvasSize.width / 2
         val centerY = canvasSize.height / 2
-        val radius = kotlin.math.min(centerX, centerY) * 0.8
+        val radius = kotlin.math.min(centerX, centerY) * 0.8f
 
         // Draw grid lines (concentric circles)
-        val gridRadii = listOf(radius * 0.33, radius * 0.66, radius)
+        val gridRadii = listOf(radius * 0.33f, radius * 0.66f, radius)
         val gridColors = listOf(
             Color(0x261E1E1E),
             Color(0x261E1E1E),
@@ -216,14 +218,14 @@ private fun GForceChart(
         drawCircle(
             color = Color(0x1E1E1E1E),
             center = Offset(centerX, centerY),
-            radius = radius * 0.3  // Safe zone circle
+            radius = radius * 0.3f  // Safe zone circle
         )
         for ((index, r) in gridRadii.withIndex()) {
             drawCircle(
                 color = gridColors[index],
                 center = Offset(centerX, centerY),
                 radius = r,
-                strokeWidth = 1.dp.toPx()
+                style = Stroke(width = 1.dp.toPx())
             )
         }
 
@@ -258,13 +260,13 @@ private fun GForceChart(
         // Draw points
         if (points.isNotEmpty()) {
             // Find max G for scaling
-            var maxAbsG = 0.1
+            var maxAbsG = 0.1f
             for (point in points) {
                 val absLateral = kotlin.math.abs(point.lateralG)
                 val absLongitudinal = kotlin.math.abs(point.longitudinalG)
                 maxAbsG = kotlin.math.max(maxAbsG, kotlin.math.max(absLateral, absLongitudinal))
             }
-            val scale = radius / (maxAbsG * 1.1)  // Add 10% padding
+            val scale = radius / (maxAbsG * 1.1f)  // Add 10% padding
 
             for (point in points) {
                 // Convert G-forces to Cartesian coordinates
@@ -309,5 +311,5 @@ private fun getSafeZonePercentage(points: List<GForcePoint>): Int {
             it.lateralG * it.lateralG + it.longitudinalG * it.longitudinalG
         ) <= 0.3
     }
-    return (safeCount * 100 / points.size).roundToInt()
+    return safeCount * 100 / points.size
 }

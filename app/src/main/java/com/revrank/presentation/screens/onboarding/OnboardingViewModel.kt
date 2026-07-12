@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.revrank.domain.model.VehicleType
 
 class OnboardingViewModel @Inject constructor() : ViewModel() {
 

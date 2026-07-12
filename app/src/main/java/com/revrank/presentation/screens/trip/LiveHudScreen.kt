@@ -1,74 +1,61 @@
 package com.revrank.presentation.screens.trip
 
-import android.content.Context
 import android.content.Intent
-import androidx.compose.foundation.Background
-import androidx.compose.foundation.border.BorderStroke
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.revrank.R
-import com.revrank.data.repository.TripTrackingRepository
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.revrank.domain.model.DrivingQuality
 import com.revrank.presentation.theme.MatrixGreen
 import com.revrank.presentation.theme.Rajdhani
 import com.revrank.presentation.theme.ShareTechMono
-import dagger.hilt.android.AndroidEntryPoint
-import hilt.viewmodel.*
-import androidx.activity.viewModels
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
+import com.revrank.presentation.viewmodel.LiveHudViewModel
+import com.revrank.service.TripTrackingService
 
-@OptIn(ExperimentalMaterial3Api::class)
-@AndroidEntryPoint
-class LiveHudScreen(
-    private val onTripEnded: () -> Unit = {}
-) : androidx.compose.runtime.Composable() {
+/**
+ * Live HUD shown while a trip is being tracked: big speed readout,
+ * quality-tinted glow, distance/score stats, and an end-trip FAB.
+ */
+@Composable
+fun LiveHudScreen(
+    viewModel: LiveHudViewModel = hiltViewModel(),
+    onTripEnded: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val speed by viewModel.speed.collectAsStateWithLifecycle()
+    val score by viewModel.score.collectAsStateWithLifecycle()
+    val distanceKm by viewModel.distanceKm.collectAsStateWithLifecycle()
+    val drivingQuality by viewModel.drivingQuality.collectAsStateWithLifecycle()
 
-    private val context = LocalContext.current
-    private val tripTrackingRepository: TripTrackingRepository = hiltViewModel()
-    private val speed by tripTrackingRepository.currentSpeed.collectAsStateWithLifecycle()
-    private val score by tripTrackingRepository.currentScore.collectAsStateWithLifecycle()
-    private val distanceKm by tripTrackingRepository.distanceKm.collectAsStateWithLifecycle()
-    private val drivingQuality by tripTrackingRepository.drivingQuality.collectAsStateWithLifecycle()
-
-    // Determine glow color based on driving quality
-    private val glowColor by remember {
-        derivedStateOf {
-            when (drivingQuality) {
-                DrivingQuality.SMOOTH -> MatrixGreen
-                DrivingQuality.MODERATE -> Color(0xFFFFA500) // Amber
-                DrivingQuality.AGGRESSIVE -> Color(Color.Red)
-            }
-        }
-    }
-
-    // Request to ignore battery optimizations if not already ignored (do once)
-    var ignoreBatteryRequested by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        if (!ignoreBatteryRequested) {
-            val powerManager = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
-            if (!powerManager.isIgnoringBatteryOptimizations(context.packageName)) {
-                // Show a system dialog to ignore battery optimizations
-                val intent = android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
-                // We can't start activity for result from composable easily, so we'll just show a snackbar or dialog.
-                // For simplicity, we'll just note that we asked and let the user go to settings manually if needed.
-                // In a real app, we might use Accompanist Permission or show a custom dialog.
-                // We'll just set the flag to true so we don't bug them every time.
-                ignoreBatteryRequested = true
-                // Optionally, show a Snackbar or Dialog here.
-            } else {
-                ignoreBatteryRequested = true
-            }
-        }
+    val glowColor = when (drivingQuality) {
+        DrivingQuality.SMOOTH -> MatrixGreen
+        DrivingQuality.MODERATE -> Color(0xFFFFA500)
+        DrivingQuality.AGGRESSIVE -> Color(0xFFFF453A)
     }
 
     Box(
@@ -76,7 +63,7 @@ class LiveHudScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // Background glow effect - a circle behind the speedometer
+        // Quality-tinted glow behind the speed readout
         Box(
             modifier = Modifier
                 .size(250.dp)
@@ -84,40 +71,31 @@ class LiveHudScreen(
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            glowsColor.copy(alpha = 0.2f),
-                            glowsColor.copy(alpha = 0f)
-                        ),
-                        center = Alignment.Center,
-                        radius = 125f
+                            glowColor.copy(alpha = 0.2f),
+                            glowColor.copy(alpha = 0f)
+                        )
                     )
                 )
         )
 
-        // Speed display (large text)
         Text(
             text = "${speed.toInt()}",
             color = Color.White,
             fontSize = 96.sp,
             fontFamily = ShareTechMono,
-            modifier = Modifier
-                .align(Alignment.Center)
+            modifier = Modifier.align(Alignment.Center)
         )
 
-        // Bottom stats row
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 24.dp)
         ) {
             Row(
-                horizontalArrangement = Arrangement.spaceBetween,
-                modifier = Modifier
-                    .width(280.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.width(280.dp)
             ) {
-                // Distance
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = "Distance",
@@ -131,10 +109,7 @@ class LiveHudScreen(
                         fontFamily = Rajdhani
                     )
                 }
-                // Score
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = Icons.Default.ShowChart,
                         contentDescription = "Score",
@@ -142,7 +117,7 @@ class LiveHudScreen(
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
-                        text = "${score}",
+                        text = "$score",
                         color = Color.White,
                         fontSize = 18.sp,
                         fontFamily = Rajdhani
@@ -151,15 +126,12 @@ class LiveHudScreen(
             }
         }
 
-        // End Trip FAB (large)
         FloatingActionButton(
             onClick = {
-                // Stop tracking service
                 val stopIntent = Intent(context, TripTrackingService::class.java).apply {
                     action = TripTrackingService.ACTION_STOP
                 }
                 ContextCompat.startForegroundService(context, stopIntent)
-                // Notify parent to navigate away
                 onTripEnded()
             },
             containerColor = MaterialTheme.colorScheme.primary,

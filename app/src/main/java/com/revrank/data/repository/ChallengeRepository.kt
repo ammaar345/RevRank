@@ -1,16 +1,12 @@
 package com.revrank.data.repository
 
-import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
-import com.revrank.domain.model.Challenge
 import com.revrank.domain.model.ChallengeAcceptance
 import com.revrank.domain.model.RouteChallenge
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.abs
-import kotlin.system.measureTimeMillis
 
 @Singleton
 class ChallengeRepository @Inject constructor() {
@@ -36,13 +32,13 @@ class ChallengeRepository @Inject constructor() {
             "createdAt" to challenge.createdAt,
             "expiresAt" to challenge.expiresAt
         )
-        challengesDocument(challenge.id).set(challengeData, SetOptions.merge())
+        challengesDocument(challenge.id).set(challengeData, SetOptions.merge()).await()
     }
 
     /** Get a challenge by its ID */
-    suspend fun getChallenge(challengeId: String): Challenge? = 
+    suspend fun getChallenge(challengeId: String): RouteChallenge? =
         challengesDocument(challengeId).get().await()
-            .toObject(Challenge::class.java)
+            .toObject(RouteChallenge::class.java)
 
     /** Accept a challenge */
     suspend fun acceptChallenge(challengeId: String, acceptance: ChallengeAcceptance) {
@@ -52,30 +48,28 @@ class ChallengeRepository @Inject constructor() {
             "score" to acceptance.score,
             "completedAt" to acceptance.completedAt
         )
-        acceptancesSubcollection(challengeId).document(acceptance.uid).set(acceptanceData, SetOptions.merge())
+        acceptancesSubcollection(challengeId).document(acceptance.uid)
+            .set(acceptanceData, SetOptions.merge()).await()
     }
 
     /** Update the score of an acceptance (when the user completes the challenge) */
     suspend fun updateChallengeAcceptanceScore(challengeId: String, userId: String, score: Int) {
-        acceptancesSubcollection(challengeId).document(userId).update("score", score)
+        acceptancesSubcollection(challengeId).document(userId).update("score", score).await()
     }
 
-    /** 
+    /**
      * Update the score for any acceptance matching the given userId and routeHash.
-     * This is called when a trip ends to update any pending challenges that match the trip's route.
+     * Called when a trip ends to update any pending challenges that match the trip's route.
      */
     suspend fun updateChallengeScoreForTrip(userId: String, routeHash: String, score: Int) {
-        // We'll get all challenges (could be optimized with queries on creatorUid != userId and expiresAt > now)
-        // For simplicity, we get all and filter.
+        // Could be optimized with queries on expiresAt > now; fine for MVP volumes.
         val challengesSnapshot = challengesCollection.get().await()
         for (challengeDoc in challengesSnapshot.documents) {
-            val challenge = challengeDoc.toObject(Challenge::class.java) ?: continue
-            // Skip if the challenge is expired (optional)
+            val challenge = challengeDoc.toObject(RouteChallenge::class.java) ?: continue
             val now = System.currentTimeMillis()
-            if (challenge.expiresAt != null && challenge.expiresAt < now) {
-                continue
+            if (challenge.expiresAt in 1 until now) {
+                continue // expired
             }
-            // Get the acceptance for this user in this challenge
             val acceptanceDoc = acceptancesSubcollection(challenge.id)
                 .document(userId)
                 .get()
@@ -91,20 +85,15 @@ class ChallengeRepository @Inject constructor() {
     }
 
     /** Get all acceptances for a challenge */
-    suspend fun getChallengeAcceptances(challengeId: String): List<ChallengeAcceptance> = 
+    suspend fun getChallengeAcceptances(challengeId: String): List<ChallengeAcceptance> =
         acceptancesSubcollection(challengeId).get().await()
-            .documents.map { it.toObject(ChallengeAcceptance::class.java) ?: throw Exception("Failed to parse acceptance") }
+            .documents.mapNotNull { it.toObject(ChallengeAcceptance::class.java) }
 
-    /** Delete a challenge (optional) */
+    /** Delete a challenge and its acceptances */
     suspend fun deleteChallenge(challengeId: String) {
-        // First delete the acceptances subcollection
         acceptancesSubcollection(challengeId).get().await().documents.forEach { doc ->
             doc.reference.delete()
         }
-        // Then delete the challenge document
-        challengesDocument(challengeId).delete()
+        challengesDocument(challengeId).delete().await()
     }
-
-    // Helper to get the acceptances subcollection reference
-    private fun acceptancesSubcollection(challengeId: String) = challengesDocument(challengeId).collection("acceptances")
 }

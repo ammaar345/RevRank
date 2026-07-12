@@ -14,14 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.revrank.domain.model.Trip
 import com.revrank.presentation.components.ProGate
 import com.revrank.presentation.screens.paywall.ProUpsellBanner
 import com.revrank.presentation.theme.*
 import com.revrank.presentation.viewmodel.routeReplay.RouteReplayViewModel
-import androidx.hilt.navigation.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
@@ -114,7 +113,7 @@ private fun RouteReplayContent(
                 ) {
                     Text(
                         text = "Route Replay Controls",
-                        style = Type.TitleMedium,
+                        style = RevRankTypography.titleMedium,
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -170,8 +169,10 @@ private fun RouteReplayContent(
                         onValueChange = { /* TODO: Seek */ },
                         enabled = true,
                         modifier = Modifier.fillMaxWidth(),
-                        color = Color(0xFF00FF41),
-                        thumbColor = Color.White
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.White,
+                            activeTrackColor = Color(0xFF00FF41)
+                        )
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -180,12 +181,12 @@ private fun RouteReplayContent(
                     ) {
                         Text(
                             text = "0:00",
-                            style = Type.LabelSmall,
+                            style = RevRankTypography.labelSmall,
                             color = Color(0xFF888888)
                         )
                         Text(
                             text = "0:00",
-                            style = Type.LabelSmall,
+                            style = RevRankTypography.labelSmall,
                             color = Color(0xFF888888)
                         )
                     }

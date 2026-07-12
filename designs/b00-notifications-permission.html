@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Notifications Permission -- RevRank</title>
+  <link rel="stylesheet" href="../revrank-theme.css">
+  <link rel="stylesheet" href="screen-skin.css">
+</head>
+<body>
+<div class="crt-scanlines crt-scanlines--phosphor"></div>
+<div class="crt-vignette crt-vignette--tinted"></div>
+<div class="crt-retrace"></div>
+<div class="hud-bg"></div>
+
+<div id="phone-frame">
+<div class="rain-layer" id="rain-layer"></div>
+<div class="term-tag">REVRANK // NOTIFICATIONS_PERMISSION</div>
+<div class="scanlines"></div>
+        <div class="onboarding">
+          <div class="ob-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--matrix)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="44" height="44">
+              <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.7 21a2 2 0 01-3.4 0" />
+              <circle cx="17.5" cy="5" r="2" fill="var(--matrix)" stroke="none" />
+            </svg>
+          </div>
+          <div class="ob-head">STAY IN<br>THE LOOP</div>
+          <div class="ob-body">Rank-ups, streak saves, weekly challenges, badge unlocks. You choose what pings — no spam, ever.</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);letter-spacing:2px;text-transform:uppercase;margin-bottom:24px">OPTIONAL · CHANGE ANYTIME</div>
+          <button class="btn btn-matrix">ALLOW NOTIFICATIONS</button>
+          <div class="ob-skip">Maybe later</div>
+        </div>
+</div>
+
+<script src="../revrank-theme.js"></script>
+<script>
+(function(){
+  var r=document.getElementById('rain-layer');
+  if(r&&window.RevRank&&RevRank.MatrixRain){
+    new RevRank.MatrixRain(r,{density:0.45,speed:0.55,fontSize:12,idleOpacity:0.10,color:'#00FF66',headColor:'#AAFFCC',tailLength:10}).start();
+  }
+  if(window.RevRank&&RevRank.GlitchScheduler){
+    new RevRank.GlitchScheduler('.term-tag',{variant:'random',audio:false,minInterval:5000,maxInterval:9000}).start();
+  }
+})();
+</script>
+</body>
+</html>

@@ -318,6 +318,18 @@ input, textarea, select {
     );
 }
 
+/* === Real Photo Background with Matrix Overlay === */
+/* Usage: place <div class="screen-bg"> inside phone-frame, before scanlines */
+/* Swap src for different images per screen for variance */
+.screen-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.screen-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;mix-blend-mode:screen;opacity:.1;filter:grayscale(.6)brightness(.5)contrast(1.2)}
+.screen-bg .bg-fade{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(0,10,0,1) 100%);z-index:1}
+.screen-bg .bg-glow{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:85%;height:100px;background:radial-gradient(ellipse at center bottom,rgba(0,255,65,.12) 0%,transparent 60%);z-index:2}
+/* variant: right-offset for screens with different composition */
+.screen-bg--right img{object-position:65% center}
+/* variant: top-offset for sky/road focus */
+.screen-bg--top img{object-position:center 25%}
+
 
 /* ========== 8. PHOSPHOR GLOW UTILITIES ========== */
 .phosphor-glow {

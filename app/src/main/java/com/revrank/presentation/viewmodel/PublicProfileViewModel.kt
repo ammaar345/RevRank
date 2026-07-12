@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 /** UI state for the public profile screen. */
 data class PublicProfileUiState(
@@ -21,9 +22,9 @@ data class PublicProfileUiState(
 )
 
 @HiltViewModel
-class PublicProfileViewModel @Inject constructor(
+class PublicProfileViewModel @Inject constructor() : ViewModel() {
+
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PublicProfileUiState())
     val uiState: StateFlow<PublicProfileUiState> = _uiState.asStateFlow()
@@ -39,8 +40,8 @@ class PublicProfileViewModel @Inject constructor(
                     .get()
                     .await()
 
-                if (userDoc.isNotEmpty()) {
-                    val user = userDoc[0].toObject(User::class.java) ?: User(
+                if (!userDoc.isEmpty) {
+                    val user = userDoc.documents[0].toObject(User::class.java) ?: User(
                         uid = "",
                         username = username,
                         displayName = username,

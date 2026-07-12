@@ -1,0 +1,522 @@
+/* ===================================================================
+   screen-skin.css — RevRank app-screen skin, CRT TERMINAL EDITION
+   Baseline: b00-sign-in-google.html (user-approved reference).
+   Loaded AFTER ../revrank-theme.css by every screen in designs/.
+
+   What this does:
+   1. Re-tints the legacy --matrix token family to phosphor #00FF66
+      so every inline style in the screens shifts palette at once.
+   2. Kills pill geometry — sharp 2px terminal rectangles everywhere.
+   3. Ghost terminal buttons: transparent + phosphor border, invert
+      on hover, blinking block cursor on primary actions.
+   4. Ports every legacy component class the extracted screens use.
+   =================================================================== */
+
+/* ========== 1. LEGACY TOKEN RE-MAP (palette + geometry shift) ===== */
+:root {
+  /* legacy matrix family → phosphor family */
+  --matrix:         #00FF66;
+  --matrix-dim:     #00CC44;
+  --matrix-muted:   #008833;
+  --matrix-glow:    rgba(0, 255, 102, 0.20);
+  --matrix-glow-sm: rgba(0, 255, 102, 0.08);
+
+  /* tokens the extracted screens reference but theme names differ */
+  --void:        #000000;
+  --surface:     #0A0A0A;
+  --surface-2:   #121212;
+  --surface-3:   #1A1A1A;
+  --track:       #222222;
+
+  /* sharp terminal geometry — pills are dead */
+  --radius:      4px;
+  --radius-sm:   2px;
+  --radius-lg:   4px;
+  --radius-pill: 2px;
+}
+
+/* ========== 2. PAGE / FRAME ========== */
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--void);
+}
+
+#phone-frame {
+  width: 375px;
+  height: 812px;
+  border: 1px solid var(--border-bright);
+  border-radius: 36px;
+  background: var(--void);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow:
+    0 0 40px var(--phosphor-glow-sm),
+    0 0 0 4px var(--surface-2),
+    0 24px 70px rgba(0, 0, 0, 0.75);
+}
+
+/* In-phone matrix rain layer (canvas injected by revrank-theme.js) */
+.rain-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* In-phone scanlines — phosphor tinted */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 255, 102, 0.04) 2px,
+    rgba(0, 255, 102, 0.04) 4px
+  );
+}
+
+.glow-center {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(0, 255, 102, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+}
+
+/* Terminal chrome tag, top-left of every screen */
+.term-tag {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  z-index: 70;
+  font-family: var(--font-terminal);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--phosphor);
+  opacity: 0.55;
+  pointer-events: none;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px var(--phosphor-glow-sm);
+}
+.term-tag::before { content: '> '; }
+.term-tag::after {
+  content: '\2588';
+  font-size: 10px;
+  margin-left: 3px;
+  animation: cursorBlink 0.9s steps(1) infinite;
+}
+
+/* ========== 3. SCREEN CONTAINERS ========== */
+.screen,
+.screen-nav {
+  padding: 52px 24px 36px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  position: relative;
+  z-index: 2;
+}
+.screen-dark {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  position: relative;
+  z-index: 2;
+}
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ========== 4. TERMINAL GHOST BUTTONS ========== */
+.btn,
+.btn-solid,
+.hud-btn {
+  width: 100%;
+  padding: 14px 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+  background: transparent;
+  color: var(--phosphor);
+  border: 1.5px solid var(--phosphor);
+  border-radius: 2px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  box-shadow:
+    0 0 6px var(--phosphor-glow-sm),
+    0 0 12px rgba(0, 255, 102, 0.06);
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.25);
+  transition:
+    background var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-med) ease,
+    transform 0.12s ease;
+}
+.btn:hover,
+.btn-solid:hover,
+.hud-btn:hover {
+  background: var(--phosphor);
+  color: #000000;
+  text-shadow: none;
+  box-shadow:
+    0 0 12px var(--phosphor-glow),
+    0 0 30px var(--phosphor-glow-sm),
+    0 0 60px rgba(0, 255, 102, 0.06);
+  transform: scale(1.02);
+}
+.btn:active,
+.btn-solid:active,
+.hud-btn:active {
+  transform: scale(0.97);
+  transition: transform 0.06s ease;
+}
+
+/* Blinking block cursor on primary actions */
+.btn-matrix::after,
+.btn-solid::after,
+.hud-btn::after {
+  content: '\2588';
+  font-size: 11px;
+  line-height: 1;
+  animation: cursorBlink 0.8s steps(1) infinite;
+}
+
+/* Secondary — dimmer outline, tint fill on hover (no invert) */
+.btn-outline {
+  border-color: var(--phosphor-dim);
+  color: var(--phosphor-dim);
+  box-shadow: none;
+  text-shadow: none;
+}
+.btn-outline:hover {
+  background: rgba(0, 255, 102, 0.10);
+  border-color: var(--phosphor);
+  color: var(--phosphor);
+  box-shadow: 0 0 20px var(--phosphor-glow-sm);
+  transform: none;
+}
+
+/* Tertiary — quiet text action */
+.btn-ghost {
+  border-color: transparent;
+  color: var(--text-dim);
+  box-shadow: none;
+  text-shadow: none;
+}
+.btn-ghost:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.04);
+  transform: none;
+}
+
+.hud-btn {
+  width: calc(100% - 40px);
+  margin: 16px auto 0;
+  padding: 16px;
+  font-size: 14px;
+  z-index: 2;
+}
+
+/* ========== 5. BOTTOM NAV — terminal tabs ========== */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 8px 24px;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 255, 102, 0.18);
+  z-index: 60;
+}
+.bottom-nav button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.28);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 6px 4px;
+  border-radius: 2px;
+  transition: color 0.25s ease, background 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav button.active {
+  color: var(--phosphor);
+  background: rgba(0, 255, 102, 0.07);
+  text-shadow: 0 0 8px var(--phosphor-glow);
+}
+.bottom-nav button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.bottom-nav button.active svg {
+  fill: var(--phosphor);
+  filter: drop-shadow(0 0 8px var(--phosphor));
+}
+/* active indicator: terminal underscore bar instead of dot */
+.bottom-nav .nav-dot {
+  width: 14px;
+  height: 2px;
+  background: var(--phosphor);
+  box-shadow: 0 0 8px var(--phosphor);
+  margin-top: 2px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.bottom-nav button.active .nav-dot { opacity: 1; }
+
+/* ========== 6. ONBOARDING ========== */
+.onboarding {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 32px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+.ob-icon {
+  width: 110px;
+  height: 110px;
+  border: 1.5px solid var(--phosphor);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+  box-shadow: 0 0 40px var(--phosphor-glow-sm), inset 0 0 20px rgba(0, 255, 102, 0.03);
+  background: rgba(0, 255, 102, 0.03);
+  position: relative;
+}
+/* corner ticks on the icon box — HUD reticle feel */
+.ob-icon::before,
+.ob-icon::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--phosphor);
+}
+.ob-icon::before { top: -1.5px; left: -1.5px; border-right: none; border-bottom: none; }
+.ob-icon::after { bottom: -1.5px; right: -1.5px; border-left: none; border-top: none; }
+.ob-icon svg { width: 44px; height: 44px; stroke: var(--phosphor); fill: none; filter: drop-shadow(0 0 6px var(--phosphor-glow)); }
+.ob-head {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  color: var(--white);
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.ob-body {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 40px;
+  max-width: 280px;
+  font-family: var(--font-body);
+}
+.ob-dots { display: flex; gap: 8px; margin-bottom: 24px; }
+.ob-dots span { width: 8px; height: 8px; background: var(--track); }
+.ob-dots span.active { background: var(--phosphor); box-shadow: 0 0 10px var(--phosphor-glow); width: 24px; }
+.ob-skip { font-size: 12px; color: var(--text-dim); margin-top: 16px; cursor: pointer; transition: color 0.15s ease; font-family: var(--font-mono); letter-spacing: 1px; }
+.ob-skip:hover { color: var(--phosphor); }
+
+/* ========== 7. LIVE HUD ========== */
+.hud-top { padding: 40px 20px 0; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
+.hud-speed { font-family: var(--font-mono); font-size: 64px; line-height: 1; color: var(--text-primary); }
+.hud-speed span { font-size: 16px; color: var(--text-dim); }
+.hud-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
+.hud-score { font-family: var(--font-mono); font-size: 32px; color: var(--phosphor); text-shadow: 0 0 15px var(--phosphor-glow-sm); }
+.hud-map {
+  background: var(--surface-1, #0A0A0A);
+  height: 300px;
+  margin: 20px;
+  border: 1px solid rgba(0, 255, 102, 0.14);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 2;
+}
+.hud-map::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 255, 102, 0.05) 1px, rgba(0, 255, 102, 0.05) 2px);
+  pointer-events: none;
+}
+.hud-map-label { color: var(--text-dim); font-size: 11px; }
+.hud-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; position: relative; z-index: 2; }
+.hud-metric { background: rgba(10, 10, 10, 0.85); border: 1px solid var(--border); padding: 12px; border-radius: 2px; }
+.hud-metric-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.hud-metric-val { font-family: var(--font-mono); font-size: 22px; }
+
+/* ========== 8. HOME ========== */
+.home-header { padding: 20px 20px 0; display: flex; justify-content: space-between; align-items: center; }
+.home-greet { font-size: 13px; color: var(--text-dim); font-family: var(--font-body); }
+.home-greet strong { color: var(--white); font-weight: 600; }
+.home-avatar { width: 40px; height: 40px; border: 1px solid var(--phosphor); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 16px; color: var(--phosphor); box-shadow: 0 0 10px var(--phosphor-glow-sm); }
+.home-rank-card { background: rgba(10, 10, 10, 0.85); border: 1px solid rgba(0, 255, 102, 0.16); margin: 16px 20px; padding: 20px; border-radius: 2px; }
+.home-rank-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.home-rank-title { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+.home-rank-badge { font-family: var(--font-mono); font-size: 10px; color: var(--phosphor); border: 1px solid var(--phosphor); padding: 3px 8px; border-radius: 2px; text-shadow: 0 0 6px var(--phosphor-glow-sm); }
+.home-progress { height: 5px; background: var(--track); margin-bottom: 8px; overflow: hidden; }
+.home-progress-fill { height: 100%; width: 67%; background: var(--phosphor); box-shadow: 0 0 8px var(--phosphor-glow); filter: drop-shadow(0 0 4px var(--phosphor)); }
+.home-progress-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+.home-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 20px 16px; }
+.home-stat { background: rgba(10, 10, 10, 0.85); border: 1px solid var(--border); padding: 14px; border-radius: 2px; }
+.home-stat-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.home-stat-val { font-family: var(--font-mono); font-size: 24px; color: var(--white); }
+.home-challenges { padding: 0 20px; margin-bottom: 20px; }
+.home-ch-head { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+.home-ch-item { background: rgba(10, 10, 10, 0.85); border: 1px solid var(--border); padding: 14px; margin-bottom: 8px; border-radius: 2px; }
+.home-ch-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.home-ch-name { font-size: 13px; color: var(--white); font-family: var(--font-body); }
+.home-ch-reward { font-family: var(--font-mono); font-size: 10px; color: var(--phosphor); }
+.home-ch-bar { height: 5px; background: var(--track); overflow: hidden; }
+.home-ch-bar-fill { height: 100%; width: 45%; background: var(--phosphor); filter: drop-shadow(0 0 4px var(--phosphor)); }
+.home-fab {
+  width: 56px; height: 56px;
+  border: 1.5px solid var(--phosphor);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.85);
+  position: absolute;
+  bottom: 96px; right: 20px;
+  color: var(--phosphor);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 24px;
+  cursor: pointer;
+  z-index: 55;
+  box-shadow: 0 0 20px var(--phosphor-glow-sm);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.25s ease, transform 0.15s ease;
+}
+.home-fab:hover { background: var(--phosphor); color: #000; box-shadow: 0 0 30px var(--phosphor-glow); transform: scale(1.05); }
+.home-fab:active { transform: scale(0.95); }
+
+/* ========== 9. TRIP END / SCORE ========== */
+.score-radial { position: relative; width: 220px; height: 220px; margin: 0 auto 20px; }
+.score-radial svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.score-radial .track { fill: none; stroke: rgba(255, 255, 255, 0.06); stroke-width: 8; stroke-linecap: butt; }
+.score-radial .fill { fill: none; stroke: var(--phosphor); stroke-width: 8; stroke-linecap: butt; stroke-dasharray: 251; stroke-dashoffset: 25; transition: stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1); filter: drop-shadow(0 0 6px var(--phosphor)); }
+.score-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.score-val { font-family: var(--font-mono); font-size: 56px; line-height: 1; color: var(--phosphor); text-shadow: 0 0 20px var(--phosphor-glow); }
+.score-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
+.score-status { font-family: var(--font-mono); font-size: 11px; color: var(--phosphor); border: 1px solid var(--phosphor); padding: 6px 16px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; border-radius: 2px; background: rgba(0, 255, 102, 0.06); text-shadow: 0 0 6px var(--phosphor-glow-sm); }
+.score-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-bottom: 16px; padding: 0 4px; }
+.score-stat { background: rgba(10, 10, 10, 0.85); border: 1px solid var(--border); padding: 12px; border-radius: 2px; }
+.score-stat-title { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+.score-stat-val { font-family: var(--font-mono); font-size: 18px; }
+.score-bars { width: 100%; margin-bottom: 16px; }
+.score-bar-row { display: flex; align-items: center; padding: 6px 0; }
+.score-bar-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 1px; width: 110px; text-transform: uppercase; }
+.score-bar-track { flex: 1; height: 5px; background: var(--track); overflow: hidden; margin: 0 8px; }
+.score-bar-fill { height: 100%; filter: drop-shadow(0 0 3px currentColor); }
+.score-bar-val { font-family: var(--font-mono); font-size: 11px; width: 28px; text-align: right; }
+.xp-gain { font-family: var(--font-mono); font-size: 18px; color: var(--phosphor); margin-bottom: 12px; text-align: center; text-shadow: 0 0 10px var(--phosphor-glow-sm); }
+
+/* ========== 10. LEADERBOARD ========== */
+.lboard-head { font-family: var(--font-mono); font-size: 16px; text-align: center; margin-bottom: 20px; letter-spacing: 2px; }
+.lboard-tabs { display: flex; gap: 4px; padding: 0 20px 20px; }
+.lboard-tab {
+  flex: 1; padding: 10px 4px; text-align: center;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+  cursor: pointer; border-radius: 2px; transition: all 0.25s ease;
+}
+.lboard-tab:hover { border-color: var(--border-bright); color: var(--text-primary); }
+.lboard-tab.active { background: var(--phosphor); color: var(--void); border-color: var(--phosphor); box-shadow: 0 0 14px var(--phosphor-glow); }
+.lboard-row { display: flex; align-items: center; gap: 12px; padding: 14px 12px; border-bottom: 1px solid var(--border); }
+.lboard-rank { font-family: var(--font-mono); font-size: 16px; color: var(--text-dim); width: 30px; text-align: center; }
+.lboard-avatar { width: 36px; height: 36px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; color: var(--phosphor); border-radius: 2px; background: rgba(10, 10, 10, 0.85); }
+.lboard-name { flex: 1; font-size: 13px; font-family: var(--font-body); }
+.lboard-score { font-family: var(--font-mono); font-size: 14px; color: var(--phosphor); }
+.lboard-row.me { background: rgba(0, 255, 102, 0.06); border-left: 2px solid var(--phosphor); }
+
+/* ========== 11. ANALYTICS ========== */
+.analytics-header { padding: 20px 20px 0; display: flex; justify-content: space-between; align-items: center; }
+.analytics-tabs { display: flex; gap: 4px; padding: 0 20px 20px; }
+.analytics-tab {
+  flex: 1; padding: 10px 4px; text-align: center;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+  cursor: pointer; border-radius: 2px; transition: all 0.25s ease;
+}
+.analytics-tab.active { color: var(--phosphor); border-color: var(--phosphor); background: rgba(0, 255, 102, 0.06); text-shadow: 0 0 6px var(--phosphor-glow-sm); }
+.analytics-chart { background: rgba(10, 10, 10, 0.85); margin: 0 20px 16px; padding: 20px; border: 1px solid var(--border); height: 160px; display: flex; align-items: flex-end; justify-content: space-around; gap: 8px; border-radius: 2px; }
+.chart-bar { width: 24px; background: var(--phosphor); opacity: 0.7; min-height: 8px; transition: height 0.5s ease; filter: drop-shadow(0 0 4px var(--phosphor)); }
+.analytics-pro { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.88); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 80; }
+.analytics-pro-icon { font-size: 36px; margin-bottom: 12px; color: var(--phosphor); text-shadow: 0 0 20px var(--phosphor-glow); }
+.analytics-pro-text { font-family: var(--font-terminal); font-size: 15px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; text-align: center; line-height: 1.8; }
+
+/* ========== 12. BADGE OVERLAY ========== */
+.badge-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.93); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; }
+.badge-star { animation: badgePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; margin-bottom: 16px; }
+.badge-name { font-family: var(--font-mono); font-size: 20px; letter-spacing: 2px; margin-bottom: 6px; }
+.badge-desc { font-size: 12px; color: rgba(255, 255, 255, 0.7); font-family: var(--font-body); }
+.badge-cta { font-size: 12px; color: rgba(255, 255, 255, 0.5); letter-spacing: 2px; margin-top: 24px; animation: pulse 2s infinite; font-family: var(--font-terminal); text-transform: uppercase; }
+@keyframes badgePop { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* ========== 13. RANK UP ========== */
+.rankup { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px 32px; text-align: center; position: relative; z-index: 2; }
+.rankup-label { font-family: var(--font-terminal); font-size: 14px; letter-spacing: 4px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 16px; }
+.rankup-badge { width: 140px; height: 140px; border: 2px solid var(--phosphor); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 56px; color: var(--phosphor); margin-bottom: 20px; box-shadow: 0 0 40px rgba(0, 255, 102, 0.25), inset 0 0 30px rgba(0, 255, 102, 0.04); border-radius: 4px; background: rgba(0, 255, 102, 0.04); }
+.rankup-title { font-family: var(--font-display); font-size: 26px; letter-spacing: 3px; margin-bottom: 8px; color: var(--phosphor); text-shadow: 0 0 12px var(--phosphor-glow); }
+.rankup-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 32px; font-family: var(--font-body); }
+.rankup-perks { width: 100%; text-align: left; margin-bottom: 32px; }
+.rankup-perk { font-family: var(--font-mono); font-size: 11px; color: var(--phosphor); padding: 8px 0; border-bottom: 1px solid var(--border); }
+.rankup-perk::before { content: '+ '; color: var(--phosphor); }
+
+/* ========== 14. LEGACY ALIAS — old hud-bg inside screens ========== */
+/* extracted screens sometimes carry a .hud-bg div inside content;
+   theme's .hud-bg is fixed full-page which also works — no override */

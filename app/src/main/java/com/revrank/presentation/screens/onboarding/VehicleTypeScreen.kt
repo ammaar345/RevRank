@@ -29,10 +29,7 @@ import com.revrank.presentation.theme.Surface2
 import com.revrank.presentation.theme.TextPrimary
 import com.revrank.presentation.theme.TextSecondary
 import com.revrank.presentation.theme.RevRankTypography
-
-enum class VehicleType {
-    CAR, MOTORCYCLE, VAN, TRUCK
-}
+import com.revrank.domain.model.VehicleType
 
 @Composable
 fun VehicleTypeScreen(

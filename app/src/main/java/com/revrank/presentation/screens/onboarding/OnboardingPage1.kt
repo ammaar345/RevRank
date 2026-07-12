@@ -28,7 +28,7 @@ fun OnboardingPage1() {
         verticalArrangement = Arrangement.Center
     ) {
         // Lottie placeholder - in real app this would be an animated speedometer
-        androidx.compose.foundation.Box(
+        androidx.compose.foundation.layout.Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(240.dp),

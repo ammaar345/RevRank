@@ -131,7 +131,7 @@ class BadgeEvaluator @Inject constructor() {
         return day == Calendar.SATURDAY || day == Calendar.SUNDAY
     }
 
-    private fun drivingStreak(allTrips: List<Trip>): Int {
+    fun drivingStreak(allTrips: List<Trip>): Int {
         if (allTrips.isEmpty()) return 0
         val sortedTrips = allTrips.filter { it.endTime != null }.sortedBy { it.endTime }
         var streak = 1
