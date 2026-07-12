@@ -2,31 +2,17 @@ package com.revrank.presentation.screens.onboarding
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -56,6 +41,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.revrank.R
 import com.revrank.presentation.components.MatrixRainBackground
+import com.revrank.presentation.components.RevRankButton
+import com.revrank.presentation.components.blinkAlpha
 import com.revrank.presentation.theme.Danger
 import com.revrank.presentation.theme.JetBrainsMono
 import com.revrank.presentation.theme.Orbitron
@@ -64,11 +51,10 @@ import com.revrank.presentation.theme.TextSecondary
 import com.revrank.presentation.theme.Void
 import com.revrank.presentation.viewmodel.auth.AuthViewModel
 
-// Dark green the hero image fades into at the bottom (matches --void->green fade
-// in designs/b00-sign-in-google.html).
+// Dark green the hero image fades into at the bottom.
 private val DarkGreen = Color(0xFF001500)
 
-/** The Google "G" glyph as a monochrome vector (tinted phosphor). */
+/** The Google "G" glyph as a monochrome vector (tinted by the button). */
 private val GoogleG: ImageVector by lazy {
     val paths = listOf(
         "M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z",
@@ -129,27 +115,9 @@ fun SignInScreen(
     val loading = state is AuthViewModel.AuthUiState.Loading
     val error = state as? AuthViewModel.AuthUiState.Error
 
-    // Hard on/off block-cursor blink (mimics CSS steps(1) blink).
-    val infinite = rememberInfiniteTransition(label = "signin")
-    val cursorAlpha by infinite.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 900
-                1f at 0
-                1f at 449
-                0f at 450
-                0f at 899
-            },
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "cursor"
-    )
-
     Box(modifier = Modifier.fillMaxSize().background(Void)) {
 
-        // --- Layer 0: motorbike hero — faint green ghost, no brightening tint ---
+        // Layer 0: motorbike hero — faint green ghost.
         Image(
             painter = painterResource(R.drawable.bike_hero),
             contentDescription = null,
@@ -159,7 +127,7 @@ fun SignInScreen(
             alpha = 0.16f
         )
 
-        // --- Layer 1: matrix rain, subtle ---
+        // Layer 1: matrix rain.
         MatrixRainBackground(
             modifier = Modifier.fillMaxSize().alpha(0.16f),
             density = 26,
@@ -167,8 +135,7 @@ fun SignInScreen(
             fontSize = 14
         )
 
-        // --- Layer 2: dark scrim — black at top for logo legibility,
-        //     clears mid so the bike ghost shows, fades to dark green at floor ---
+        // Layer 2: dark scrim + dark-green floor fade.
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -182,7 +149,7 @@ fun SignInScreen(
                 )
         )
 
-        // --- Layer 3: radial phosphor underglow near the floor ---
+        // Layer 3: radial phosphor underglow near the floor.
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -196,14 +163,16 @@ fun SignInScreen(
                 )
         )
 
-        // --- Content ---
+        // Content
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .padding(horizontal = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.height(64.dp))
 
-            // Logo with chromatic-aberration split + phosphor glow
             LogoGlitch()
 
             Spacer(Modifier.height(8.dp))
@@ -219,21 +188,22 @@ fun SignInScreen(
                     text = "█",
                     fontFamily = JetBrainsMono,
                     fontSize = 10.sp,
-                    color = Phosphor.copy(alpha = cursorAlpha)
+                    color = Phosphor.copy(alpha = blinkAlpha())
                 )
             }
 
-            // Hero space — bike shows through here
             Spacer(Modifier.weight(1f))
 
-            // Ghost Google button
-            GoogleGhostButton(
-                loading = loading,
-                cursorAlpha = cursorAlpha,
+            RevRankButton(
+                text = if (loading) "AUTHENTICATING" else "Sign in with Google",
                 onClick = {
                     authViewModel.reset()
                     launcher.launch(googleClient.signInIntent)
-                }
+                },
+                enabled = !loading,
+                primary = true,
+                leadingIcon = if (loading) null else GoogleG,
+                showCursor = !loading
             )
 
             if (error != null) {
@@ -270,13 +240,10 @@ private fun LogoGlitch() {
         letterSpacing = 8.sp
     )
     Box(contentAlignment = Alignment.Center) {
-        // red channel offset
         Text("REVRANK", style = logoStyle, color = Color(0xFFFF0000).copy(alpha = 0.18f),
             modifier = Modifier.padding(start = 3.dp))
-        // blue channel offset
         Text("REVRANK", style = logoStyle, color = Color(0xFF0050FF).copy(alpha = 0.18f),
             modifier = Modifier.padding(end = 3.dp))
-        // phosphor core + glow
         Text(
             text = "REVRANK",
             style = logoStyle.copy(
@@ -284,74 +251,5 @@ private fun LogoGlitch() {
             ),
             color = Phosphor
         )
-    }
-}
-
-@Composable
-private fun GoogleGhostButton(
-    loading: Boolean,
-    cursorAlpha: Float,
-    onClick: () -> Unit
-) {
-    val shape = RoundedCornerShape(2.dp)
-    Box(
-        modifier = Modifier
-            .widthIn(min = 240.dp)
-            .clip(shape)
-            .border(1.5.dp, Phosphor, shape)
-            .clickable(
-                enabled = !loading,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .padding(PaddingValues(horizontal = 28.dp, vertical = 14.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        if (loading) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(14.dp),
-                    color = Phosphor,
-                    strokeWidth = 1.5.dp
-                )
-                Text(
-                    text = "EXECUTING",
-                    fontFamily = JetBrainsMono,
-                    fontSize = 11.sp,
-                    letterSpacing = 4.sp,
-                    color = Phosphor
-                )
-            }
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Icon(
-                    imageVector = GoogleG,
-                    contentDescription = null,
-                    tint = Phosphor,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = "SIGN IN WITH GOOGLE",
-                    fontFamily = JetBrainsMono,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
-                    letterSpacing = 3.sp,
-                    color = Phosphor
-                )
-                Text(
-                    text = "█",
-                    fontFamily = JetBrainsMono,
-                    fontSize = 11.sp,
-                    color = Phosphor.copy(alpha = cursorAlpha)
-                )
-            }
-        }
     }
 }
