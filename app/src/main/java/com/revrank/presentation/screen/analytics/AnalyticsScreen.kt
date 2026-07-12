@@ -31,8 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.revrank.domain.model.Trip
+import com.revrank.presentation.components.TerminalScaffold
 import com.revrank.presentation.theme.MatrixGreen
 import com.revrank.presentation.theme.Rajdhani
 import com.revrank.presentation.theme.ShareTechMono
@@ -52,10 +54,12 @@ fun AnalyticsScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("SCORES", "DISTANCE", "CATEGORIES")
 
+    TerminalScaffold(screenId = "ANALYTICS") {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .systemBarsPadding()
+            .padding(top = 28.dp)
     ) {
         Row(
             modifier = Modifier
@@ -101,6 +105,7 @@ fun AnalyticsScreen(
             1 -> DistanceTab(trips)
             2 -> CategoriesTab(trips)
         }
+    }
     }
 }
 

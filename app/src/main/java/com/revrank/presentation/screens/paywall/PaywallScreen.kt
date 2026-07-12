@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.revrank.data.revenuecat.PurchaseResult
 import com.revrank.domain.model.PricingPeriod
+import com.revrank.presentation.components.TerminalScaffold
 import com.revrank.presentation.theme.*
 
 private val features = listOf(
@@ -62,11 +63,7 @@ fun PaywallScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Void)
-    ) {
+    TerminalScaffold(screenId = "PRO") {
         // Background HUD glow
         Box(
             modifier = Modifier

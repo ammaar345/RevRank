@@ -132,10 +132,27 @@ class MainActivity : ComponentActivity() {
             val onboardingViewModel: OnboardingViewModel = hiltViewModel()
             val onboardingComplete by onboardingViewModel.onboardingComplete.collectAsState()
             val isTripActive by tripViewModel.isTripActive.collectAsState()
+            val justEndedTrip by tripViewModel.justEndedTrip.collectAsState()
 
             when {
                 !onboardingComplete -> OnboardingNavHost(navController, onboardingViewModel)
-                isTripActive -> LiveHudScreen(onTripEnded = { /* nav host reappears when isTripActive flips */ })
+                isTripActive -> LiveHudScreen(
+                    onTripEnded = { tripViewModel.captureEndingTrip() }
+                )
+                justEndedTrip != null -> {
+                    val ended = justEndedTrip!!
+                    com.revrank.presentation.screens.score.TripEndScreen(
+                        trip = ended,
+                        user = com.revrank.domain.model.User(
+                            uid = ended.userId,
+                            username = "You",
+                            displayName = "You",
+                            lastTripDate = ended.endTime
+                        ),
+                        onViewHistory = { tripViewModel.clearEndedTrip() },
+                        onBadgeDismissed = { tripViewModel.clearEndedTrip() }
+                    )
+                }
                 else -> MainNavHost(navController)
             }
         }

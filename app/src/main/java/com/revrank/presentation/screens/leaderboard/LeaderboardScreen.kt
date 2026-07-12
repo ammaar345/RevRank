@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.revrank.domain.model.LeaderboardEntry
+import com.revrank.presentation.components.TerminalScaffold
 import com.revrank.presentation.theme.*
 import com.revrank.presentation.viewmodel.LeaderboardUiState
 import com.revrank.presentation.viewmodel.LeaderboardViewModel
@@ -34,12 +35,8 @@ fun LeaderboardScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Void)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    TerminalScaffold(screenId = "LEADERBOARD") {
+        Column(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(top = 28.dp)) {
 
             // ─── HEADER ───
             Row(
