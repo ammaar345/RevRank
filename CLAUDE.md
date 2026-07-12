@@ -4,9 +4,9 @@
 
 ## ⏩ SESSION RESUME — START HERE (updated 2026-07-12)
 
-**One-line status:** App **builds AND runs on the emulator** end-to-end (onboarding → home → bottom nav). Real Firebase config is wired. Next task = **wire real Google Sign-In code** (the button is still stubbed — it just navigates, doesn't authenticate).
+**One-line status:** App **builds AND runs on the emulator** end-to-end (onboarding → home → bottom nav). Real Firebase config is wired. **Google Sign-In is now wired (code side)** on branch `feature/google-sign-in` — assembleDebug passes, but not yet emulator-verified at runtime. Next = **runtime-test sign-in on the emulator**, then persist onboarding flag / badge persistence / RouteReplay map.
 
-**To continue, sneaky can just say e.g. "wire the google sign-in" or "run it on the emulator" or "keep improving screens."**
+**To continue, sneaky can just say e.g. "test the sign-in on the emulator" or "persist the onboarding flag" or "keep improving screens."**
 
 ### Where things stand
 - ✅ First successful build ever (fixed 616 → 0 compile errors + Dagger graph). Branch `feature/build-fixes-reskin-emulator-test` pushed → **PR #1** (https://github.com/ammaar345/RevRank/pull/1), not yet merged to master.
@@ -16,9 +16,11 @@
 - ✅ Debug demo-data seeder (`data/local/DemoData.kt`, userId `current_user_id`) so screens have content offline.
 - ✅ **Real `google-services.json` in `app/`** — project `revrank-cc0fc`, package `com.revrank`, BOTH oauth_clients (Android type-1 + Web type-3), Google auth provider enabled, SHA-1 registered. File is **gitignored (stays local, never pushed)**. Firestore/Storage/Analytics/Crashlytics all wired to the real project.
 
-### Immediate next task: real Google Sign-In (Firebase side is DONE, code side is NOT)
-- SignInScreen `onGoogleSignIn` currently just `navController.navigate(UsernamePicker)` — no auth. Need: Google Sign-In (`play-services-auth` already in build.gradle) using the **Web client ID** `37242091998-bjsniaabgsmndmiebt9utdbhgg72goji.apps.googleusercontent.com` → exchange token with `FirebaseAuth` → feed real `uid` into ViewModels (they hardcode `current_user_id` / `current_user`).
-- Also still stubbed: onboarding-complete flag not persisted (DataStore) so reinstall replays onboarding; badge persistence; RouteReplay Google Map; auto-trip-detection receiver.
+### Google Sign-In: DONE (code side) — branch `feature/google-sign-in`, pushed, assembleDebug passes
+- `SignInScreen` launches `GoogleSignInClient` (requestIdToken via generated `R.string.default_web_client_id`, the type-3 web client) → `AuthRepository.signInWithGoogle(idToken)` → `FirebaseAuth`. New `AuthViewModel` (Idle/Loading/Success/Error) + new `SessionManager` (`auth.currentUser?.uid`, falls back to `DemoData.DEMO_USER_ID` when signed out).
+- Trips/Analytics/GForce/RouteReplay ViewModels now inject `SessionManager` and use `session.currentUserId` (no more hardcoded `current_user_id`). **Still hardcoded:** `ChallengeAcceptanceScreen` (`current_user_id`/`current_user`).
+- **Not yet runtime-verified** — sign-in flow needs an emulator/device test (real Google account, check FirebaseAuth uid lands + demo data swaps out).
+- Still stubbed: onboarding-complete flag not persisted (DataStore) so reinstall replays onboarding; badge persistence; RouteReplay Google Map; auto-trip-detection receiver.
 
 ### Build & run commands (host has NO Android Studio; toolchain on D:)
 ```bash
