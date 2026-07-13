@@ -2,6 +2,8 @@ package com.revrank.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.revrank.data.local.dao.BadgeDao
+import com.revrank.data.local.entities.BadgeEntity
 import com.revrank.data.repository.ChallengeRepository
 import com.revrank.data.repository.TripRepository
 import com.revrank.data.repository.UserRepository
@@ -27,7 +29,8 @@ class TripEndViewModel @Inject constructor(
     private val tripRepository: TripRepository,
     private val userRepository: UserRepository,
     private val badgeEvaluator: BadgeEvaluator,
-    private val challengeRepository: ChallengeRepository
+    private val challengeRepository: ChallengeRepository,
+    private val badgeDao: BadgeDao
 ) : ViewModel() {
 
     private val _endedTrip = MutableStateFlow<Trip?>(null)
@@ -48,16 +51,34 @@ class TripEndViewModel @Inject constructor(
         viewModelScope.launch {
             val allTrips = tripRepository.getAllTripsForUserFlow(trip.userId).first()
 
-            // TODO: earned badges should be loaded from persistence once badge storage lands
-            val newlyEarned = badgeEvaluator.evaluate(trip, allTrips, emptyList())
+            // Evaluate against already-earned badges so only genuinely new ones fire,
+            // then persist them.
+            val alreadyEarned = badgeDao.getBadgesForUser(trip.userId).first()
+                .mapNotNull { runCatching { BadgeType.valueOf(it.badgeType) }.getOrNull() }
+            val newlyEarned = badgeEvaluator.evaluate(trip, allTrips, alreadyEarned)
             _newBadges.value = newlyEarned
+            newlyEarned.forEach { badge ->
+                badgeDao.insertBadge(
+                    BadgeEntity(
+                        id = "${trip.userId}_${badge.name}",
+                        userId = trip.userId,
+                        earnedAt = System.currentTimeMillis(),
+                        badgeType = badge.name
+                    )
+                )
+            }
 
             val streakBonus = badgeEvaluator.drivingStreak(allTrips)
             val gained = XPCalculator.calculate(trip, streakBonus)
             _xpGained.value = gained
 
-            val oldRank = Rank.fromXp(user.xp)
-            val updatedRank = Rank.fromXp(user.xp + gained)
+            // Rank-up computed from real accumulated XP across all prior finished
+            // trips (not the passed-in user stub).
+            val priorXp = allTrips
+                .filter { it.id != trip.id && it.endTime != null }
+                .sumOf { XPCalculator.calculate(it, 0) }
+            val oldRank = Rank.fromXp(priorXp)
+            val updatedRank = Rank.fromXp(priorXp + gained)
             if (updatedRank != oldRank) {
                 _newRank.value = updatedRank.displayName
             }

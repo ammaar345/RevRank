@@ -127,7 +127,7 @@ fun MainShell(
                     RanksScreen(
                         currentRank = uiState.rank,
                         xp = uiState.xp,
-                        badges = emptyList()
+                        badges = uiState.badges
                     )
                 }
                 3 -> ProfileScreen()

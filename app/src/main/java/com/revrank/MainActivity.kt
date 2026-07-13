@@ -272,7 +272,7 @@ class MainActivity : ComponentActivity() {
                 RanksScreen(
                     currentRank = uiState.rank,
                     xp = uiState.xp,
-                    badges = emptyList() // TODO: badge persistence
+                    badges = uiState.badges
                 )
             }
             composable(

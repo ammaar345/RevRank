@@ -98,8 +98,8 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StatTile("TRIPS", state.weeklyTrips.toString(), Modifier.weight(1f))
-                StatTile("KM", "%.0f".format(state.weeklyKm), Modifier.weight(1f))
+                StatTile("TRIPS", state.totalTrips.toString(), Modifier.weight(1f))
+                StatTile("KM", "%.0f".format(state.totalKm), Modifier.weight(1f))
             }
             Spacer(Modifier.height(12.dp))
             Row(

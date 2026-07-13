@@ -19,6 +19,10 @@ class SessionManager @Inject constructor(
     val currentUserId: String
         get() = auth.currentUser?.uid ?: DemoData.DEMO_USER_ID
 
+    /** Real display name from the signed-in Google account, or a neutral default. */
+    val displayName: String
+        get() = auth.currentUser?.displayName?.takeIf { it.isNotBlank() } ?: "Driver"
+
     val isSignedIn: Boolean
         get() = auth.currentUser != null
 
