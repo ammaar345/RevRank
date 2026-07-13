@@ -49,7 +49,7 @@ fun HomeScreen(
 ) {
     val greeting = rememberGreeting(username)
     val xpProgress = Rank.progressToNext(xp)
-    val nextRank = remember {
+    val nextRank = remember(rank) {
         val nextIndex = rank.ordinal + 1
         if (nextIndex < Rank.entries.size) Rank.entries[nextIndex] else null
     }
